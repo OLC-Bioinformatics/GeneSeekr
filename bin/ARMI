@@ -25,7 +25,7 @@ def helper(genes, targets, out, cuttoff, aro, threads):
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
-    from GeneSeekr.ARMI_Lt import parent
+    from GeneSeekr.GeneSeekrOOP import parent
     parser = ArgumentParser(description='Antibiotic Resistance Marker Identifier:\n'
                                         'Use to find markers for any bacterial genome',
                             parents=[parent])
