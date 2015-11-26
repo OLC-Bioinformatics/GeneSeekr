@@ -10,6 +10,8 @@ setup(
     author_email='mikewknowles@gmail.com',
     description='BLAST formatter for full genes',
     long_description=open('README.md').read(),
-    install_requires=['biopython >= 1.65'],
-    scripts=['bin/ARMI', 'bin/GeneSeekr']
+    install_requires=['biopython >= 1.65',
+                      'argparse >= 1.4.0'],
+    scripts=['bin/ARMI',
+             'bin/GeneSeekr']
 )

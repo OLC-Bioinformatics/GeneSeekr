@@ -25,15 +25,11 @@ def helper(genes, targets, out, cuttoff, aro, threads):
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
+    from GeneSeekr.ARMI_Lt import parent
     parser = ArgumentParser(description='Antibiotic Resistance Marker Identifier:\n'
-                                        'Use to find markers for any bacterial genome')
-    parser.add_argument('--version', action='version', version='%(prog)s v0.5')
-    parser.add_argument('-i', '--input', required=True, help='Specify input fasta folder')
-    parser.add_argument('-m', '--marker', required=True, help='Specify antibiotic markers folder')
-    parser.add_argument('-o', '--output', required=True, help='Specify output folder for csv')
+                                        'Use to find markers for any bacterial genome',
+                            parents=[parent])
     parser.add_argument('-a', '--anti', type=str, required=True, help='JSON file location')
-    parser.add_argument('-c', '--cutoff', type=int, default=70, help='Threshold for maximum unique bacteria'
-                                                                     ' for a single antibiotic')
-    parser.add_argument('-t', '--threads', type=int, default=12, help='Specify number of threads')
+    parser.set_defaults(cutoff=70)
     args = vars(parser.parse_args())
     helper(args['marker'], args['input'], args['output'], args['cutoff'], args['anti'], args['threads'])

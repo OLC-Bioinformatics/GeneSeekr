@@ -2,14 +2,12 @@
 import os
 import sys
 import time
-import json
 import copy_reg
 import types
 from collections import defaultdict
 from Bio.Application import _Option, AbstractCommandline, _Switch
 from Bio.Blast.Applications import NcbiblastnCommandline
 from multiprocessing import Pool
-from ARMICARD import decipher
 __author__ = 'mike knowles'
 
 __doc__ = 'The purpose of this set of modules is to improve upon earlier development of ARMISeekr.py and eventually' \
@@ -166,6 +164,4 @@ class ARMISeekr(object):
                 # Add the allele numbers to the row for the appropriate gene, otherwise return N
         with open("%s/%s_results_%s.csv" % (out, name, time.strftime("%Y.%m.%d.%H.%M.%S")), 'wb') as csvfile:
             csvfile.write(row)
-
-
 

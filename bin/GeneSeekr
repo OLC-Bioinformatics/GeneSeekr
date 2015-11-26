@@ -21,16 +21,13 @@ def helper(genes, targets, out, cuttoff, threads):
          sort_keys=True, indent=4, separators=(',', ': '))
     result.csvwriter(out, 'rMLST')
 
+
 if __name__ == '__main__':
     from argparse import ArgumentParser
+    from GeneSeekr.ARMI_Lt import parent
     parser = ArgumentParser(description='Multilocus Seqeunce Typing Assay with BLAST:\n'
-                                        'Use to find markers for any bacterial genome')
-    parser.add_argument('--version', action='version', version='%(prog)s v0.5')
-    parser.add_argument('-i', '--input', required=True, help='Specify input fasta folder')
-    parser.add_argument('-m', '--marker', required=True, help='Specify MLST markers folder')
-    parser.add_argument('-o', '--output', required=True, help='Specify output folder for csv')
-    parser.add_argument('-c', '--cutoff', type=int, default=100, help='Threshold for maximum unique bacteria'
-                                                                      ' for a single MLST allele')
-    parser.add_argument('-t', '--threads', type=int, default=12, help='Specify number of threads')
+                                        'Use to find markers for any bacterial genome',
+                            parents=[parent])
+    parser.set_defaults(cutoff=70)
     args = vars(parser.parse_args())
     helper(args['marker'], args['input'], args['output'], args['cutoff'], args['threads'])

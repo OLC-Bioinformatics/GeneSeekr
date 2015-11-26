@@ -1,12 +1,14 @@
 __author__ = 'mike knowles'
 
-import json, time, os
+import json
+import time
+import os
 
 
-class card():
+class Card():
     '''
     CARD requires a gene # as an input class has three functions:
-    card(antidict, gene)
+    Card(antidict, gene)
     resist will :return and list of antibiotics for a revelant gene
         Includes functionality to trace the depenedencies of a gene complex
         Utilizes recurssion to achieve all possible antibiotics
@@ -34,7 +36,7 @@ class card():
                 resistlist.extend(self.antidict[self.index]["resist"])
         if "isa" in self.antidict[self.index]:  # Recursion for parent antibiotic traits
             for depend in self.antidict[self.index]["isa"]:
-                for amr in card(self.antidict, depend).resist(genome):  # Call self to recurse through the same class
+                for amr in Card(self.antidict, depend).resist(genome):  # Call self to recurse through the same class
                     if amr not in resistlist:
                         resistlist.append(amr)
                 # resistlist.extend(self.resist(genome))  # Call self to recurse through the same class
@@ -77,7 +79,7 @@ def decipher(plusdict, antidict, outputs):
         outputdict[genome] = {"resist": [], "sensitivity": [], "genes": []}
         resistance = outputdict[genome]["resist"]
         for gene in plusdict[genome]:
-            analysis = card(antidict, gene)
+            analysis = Card(antidict, gene)
             # refgene = plusdict[genome][gene]
             if plusdict[genome][gene]:
                 resist = analysis.resist(genome)  # check resistances
@@ -99,7 +101,7 @@ def decipher(plusdict, antidict, outputs):
 
 
     for gene in antidict:  # build hearder list
-        resistances = card(antidict, gene).anti()
+        resistances = Card(antidict, gene).anti()
         if resistances is not None:
             for resist in resistances:
                 if resist not in antilist:
