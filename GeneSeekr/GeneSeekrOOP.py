@@ -21,7 +21,7 @@ class GeneSeekr(ARMISeekr):
         if stdout != '':
             return [[fasta, aln[0].split('_')[0], int(aln[0].split('_')[1])]
                     for aln in [hsp.split('\t')
-                                for hsp in stdout.rstrip().split("\n")]
+                    for hsp in stdout.rstrip().split("\n")]
                     if abs(float(aln[1]) / float(aln[2])) >= self.cutoff/100.0]
 
 
