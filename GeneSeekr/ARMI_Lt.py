@@ -116,8 +116,7 @@ class ARMISeekr(object):
 
     def _blast(self, (fasta, db)):
         self.yeah()
-        blastn = NcbiblastnCommandline('/usr/local/bin/blastn',
-                                       query=fasta,
+        blastn = NcbiblastnCommandline(query=fasta,
                                        db=db,
                                        evalue=10,
                                        outfmt="'6 sseqid nident slen'",
