@@ -97,7 +97,6 @@ class ARMISeekr(object):
         if not os.path.isfile('{}.nhr'.format(db)):  # add nhr for searching
             assert os.path.isfile(fasta)  # check that the fasta has been specified properly
             MakeBlastDB('/usr/local/bin/makeblastdb', db=fasta, out=db, dbtype='nucl')()  # Use MakeBlastDB above
-            self.yeah()
         return 0
 
     def __init__(self, subject, query, threads=12):
@@ -115,7 +114,6 @@ class ARMISeekr(object):
         print "\r[{0}] BLAST database(s) created".format(time.strftime("%H:%M:%S"))
 
     def _blast(self, (fasta, db)):
-        self.yeah()
         blastn = NcbiblastnCommandline(query=fasta,
                                        db=db,
                                        evalue=10,
@@ -132,7 +130,6 @@ class ARMISeekr(object):
         assert isinstance(cutoff, int), u'Cutoff is not an integer {0!r:s}'.format(cutoff)
         self.cutoff = cutoff
         print "[{}] Now performing and parsing BLAST database searches".format(time.strftime("%H:%M:%S"))
-        self.yeah(0)
         start = time.time()
         p = Pool(12)
         for genes in self.db:

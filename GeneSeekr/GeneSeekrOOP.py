@@ -9,7 +9,6 @@ __author__ = 'mike knowles'
 class GeneSeekr(ARMISeekr):
 
     def _blast(self, (fasta, db)):
-        self.yeah()
         blastn = NcbiblastnCommandline(query=fasta,
                                        db=db,
                                        evalue=10,
