@@ -145,6 +145,7 @@ class ARMISeekr(object):
         end = time.time() - start
         print "\n[{0:s}] Elapsed time for GeneSeekr is {1:0d}m {2:0d}s with {3:0.2f}s per genome".format(
             time.strftime("%H:%M:%S"), int(end) / 60, int(end) % 60, end / float(len(self.query)))
+        return self.plus
 
     def csvwriter(self, out, name):
         assert isinstance(out, str), u'Output location is not a string {0!r:s}'.format(out)
