@@ -93,7 +93,8 @@ class ARMISeekr(object):
             sys.stdout.write('\r[{}] {} ( \xE2\x80\xA2_\xE2\x80\xA2)'.format(time.strftime("%H:%M:%S"), self.count))
         self.count += 1
 
-    def makeblastdb(self, (fasta, db)):
+    @staticmethod
+    def makeblastdb((fasta, db)):
         if not os.path.isfile('{}.nhr'.format(db)):  # add nhr for searching
             assert os.path.isfile(fasta)  # check that the fasta has been specified properly
             MakeBlastDB(db=fasta, out=db, dbtype='nucl')()  # Use MakeBlastDB above
