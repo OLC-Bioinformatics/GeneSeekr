@@ -5,7 +5,7 @@ except ImportError:
 
 setup(
     name='pythonGeneSeekr',
-    version='0.5dev',
+    version='0.5dev2',
     packages=['GeneSeekr'],
     url='https://github.com/OLC-Bioinformatics/pythonGeneSeekr',
     license='MIT',
