@@ -16,5 +16,6 @@ setup(
     install_requires=['biopython >= 1.65',
                       'argparse >= 1.4.0'],
     scripts=['bin/ARMI',
-             'bin/GeneSeekr']
+             'bin/GeneSeekr',
+             'bin/Jackson']
 )
