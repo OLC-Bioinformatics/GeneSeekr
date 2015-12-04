@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from GeneSeekr.GeneSeekrOOP import ARMISeekr
+from GeneSeekr import Jackson
 __author__ = 'mike knowles'
 
 
@@ -14,7 +14,7 @@ def helper(genes, targets, out, cuttoff, threads):
     ispath = (lambda x: glob(x + "/*.fa*") if os.path.isdir(x) else [x])
     genes = ispath(genes)
     targets = ispath(targets)
-    result = ARMISeekr(genes, targets, threads)
+    result = Jackson(genes, targets, threads)
     result.mpblast(cuttoff)
     json.dump(result.plus, open("%s/Jackson-gene_results_%s.json" % (out, time.strftime("%Y.%m.%d.%H.%M.%S")), 'w'),
               sort_keys=True, indent=4, separators=(',', ': '))
@@ -23,7 +23,7 @@ def helper(genes, targets, out, cuttoff, threads):
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
-    from GeneSeekr.GeneSeekrOOP import parent
+    from GeneSeekr.MLSTSeekr import parent
     parser = ArgumentParser(description='Antibiotic Resistance Marker Identifier:\n'
                                         'Use to find markers for any bacterial genome',
                             parents=[parent])

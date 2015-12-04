@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from GeneSeekr.GeneSeekrOOP import GeneSeekr
+from GeneSeekr.MLSTSeekr import GeneSeekr
 __author__ = 'mike knowles'
 
 
@@ -23,7 +23,7 @@ def helper(genes, targets, out, cuttoff, threads):
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
-    from GeneSeekr.GeneSeekrOOP import parent
+    from GeneSeekr.MLSTSeekr import parent
     parser = ArgumentParser(description='Multilocus Seqeunce Typing Assay with BLAST:\n'
                                         'Use to find markers for any bacterial genome',
                             parents=[parent])
