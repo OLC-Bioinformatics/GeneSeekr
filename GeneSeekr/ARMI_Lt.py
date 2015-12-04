@@ -94,7 +94,7 @@ class ARMISeekr(object):
         self.count += 1
 
     # @staticmethod
-    def makeblastdb((fasta, db)):
+    def makeblastdb(self, (fasta, db)):
         if not os.path.isfile('{}.nhr'.format(db)):  # add nhr for searching
             assert os.path.isfile(fasta)  # check that the fasta has been specified properly
             MakeBlastDB(db=fasta, out=db, dbtype='nucl')()  # Use MakeBlastDB above
