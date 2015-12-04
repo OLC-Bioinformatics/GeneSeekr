@@ -69,7 +69,7 @@ def _unpickle_method(func_name, obj, cls):
 
 import copy_reg
 import types
-copy_reg.pickle(type.MethodType, _pickle_method, _unpickle_method)
+copy_reg.pickle(types.MethodType, _pickle_method, _unpickle_method)
 
 
 class ARMISeekr(object):
@@ -162,4 +162,3 @@ class ARMISeekr(object):
                 # Add the allele numbers to the row for the appropriate gene, otherwise return N
         with open("%s/%s_results_%s.csv" % (out, name, time.strftime("%Y.%m.%d.%H.%M.%S")), 'wb') as csvfile:
             csvfile.write(row)
-
