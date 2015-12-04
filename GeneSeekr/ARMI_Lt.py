@@ -69,7 +69,7 @@ def _unpickle_method(func_name, obj, cls):
 
 import copy_reg
 import types
-copy_reg.pickle(types.MethodType, _pickle_method, _unpickle_method)
+copy_reg.pickle(type.MethodType, _pickle_method, _unpickle_method)
 
 
 class ARMISeekr(object):
@@ -93,7 +93,7 @@ class ARMISeekr(object):
             sys.stdout.write('\r[{}] {} ( \xE2\x80\xA2_\xE2\x80\xA2)'.format(time.strftime("%H:%M:%S"), self.count))
         self.count += 1
 
-    @staticmethod
+    # @staticmethod
     def makeblastdb((fasta, db)):
         if not os.path.isfile('{}.nhr'.format(db)):  # add nhr for searching
             assert os.path.isfile(fasta)  # check that the fasta has been specified properly
