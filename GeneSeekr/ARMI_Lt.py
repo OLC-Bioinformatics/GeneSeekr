@@ -2,8 +2,6 @@
 import os
 import sys
 import time
-import copy_reg
-import types
 from collections import defaultdict
 from Bio.Application import _Option, AbstractCommandline, _Switch
 from Bio.Blast.Applications import NcbiblastnCommandline
@@ -69,6 +67,8 @@ def _unpickle_method(func_name, obj, cls):
             break
     return func.__get__(obj, cls)
 
+import copy_reg
+import types
 copy_reg.pickle(types.MethodType, _pickle_method, _unpickle_method)
 
 
