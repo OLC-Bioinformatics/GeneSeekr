@@ -93,13 +93,6 @@ class ARMISeekr(object):
             sys.stdout.write('\r[{}] {} ( \xE2\x80\xA2_\xE2\x80\xA2)'.format(time.strftime("%H:%M:%S"), self.count))
         self.count += 1
 
-    # @staticmethod
-    def makeblastdb(self, (fasta, db)):
-        if not os.path.isfile('{}.nhr'.format(db)):  # add nhr for searching
-            assert os.path.isfile(fasta)  # check that the fasta has been specified properly
-            MakeBlastDB(db=fasta, out=db, dbtype='nucl')()  # Use MakeBlastDB above
-        return 0
-
     def __init__(self, subject, query, threads=12):
         """:type subject: list of genes
            :type query: list of target genomes"""
@@ -111,7 +104,7 @@ class ARMISeekr(object):
         self.plus = dict((target, defaultdict(list)) for target in self.query)  # Initialize :return dict
         print '[{}] GeneSeekr input is path with {} files'.format(time.strftime("%H:%M:%S"), len(query))
         print "[{}] Creating necessary databases for BLAST".format(time.strftime("%H:%M:%S"))
-        Pool(self.threads).map(self.makeblastdb, zip(self.subject, self.db))
+        Pool(self.threads).map(makeblastdb, zip(self.subject, self.db))
         print "\r[{0}] BLAST database(s) created".format(time.strftime("%H:%M:%S"))
 
     def _blast(self, (fasta, db)):
@@ -162,3 +155,10 @@ class ARMISeekr(object):
                 # Add the allele numbers to the row for the appropriate gene, otherwise return N
         with open("%s/%s_results_%s.csv" % (out, name, time.strftime("%Y.%m.%d.%H.%M.%S")), 'wb') as csvfile:
             csvfile.write(row)
+
+
+def makeblastdb((fasta, db)):
+    if not os.path.isfile('{}.nhr'.format(db)):  # add nhr for searching
+        assert os.path.isfile(fasta)  # check that the fasta has been specified properly
+        MakeBlastDB(db=fasta, out=db, dbtype='nucl')()  # Use MakeBlastDB above
+    return 0
