@@ -135,9 +135,9 @@ class ARMISeekr(object):
                             self.genelist.append(gene)  # create list of all genes in anaylsis
                         self.plus[fasta][gene].append(v)
                         self.plus[fasta][gene].sort()
-
+        print "[{}] Now compiling BLAST database results".format(time.strftime("%H:%M:%S"))
         end = time.time() - start
-        print "\n[{0:s}] Elapsed time for GeneSeekr is {1:0d}m {2:0d}s with {3:0.2f}s per genome".format(
+        print "[{0:s}] Elapsed time for GeneSeekr is {1:0d}m {2:0d}s with {3:0.2f}s per genome".format(
             time.strftime("%H:%M:%S"), int(end) / 60, int(end) % 60, end / float(len(self.query)))
         return self.plus
 
@@ -145,6 +145,7 @@ class ARMISeekr(object):
         assert isinstance(out, str), u'Output location is not a string {0!r:s}'.format(out)
         assert isinstance(name, str), u'Output name is not a string {0!r:s}'.format(name)
         assert os.path.isdir(out), u'Output location is not a valid directory {0!r:s}'.format(out)
+        print "[{}] Writing CSV and JSON to output directory".format(time.strftime("%H:%M:%S"))
         self.genelist.sort()
         rowcount, row = 0, 'Strain,'
         row += ', '.join(self.genelist)
