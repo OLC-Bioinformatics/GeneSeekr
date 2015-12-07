@@ -16,12 +16,9 @@ class Jackson(ARMISeekr):
                                        num_alignments=10000)
         stdout, stderr = blastn()
         if stdout != '':
-            plus = [[fasta, aln[0],
+            return [[fasta, aln[0],
                      (lambda x: "{0.2d}".format(x) if x >= 100 else '+')(abs(float(aln[1]) / float(aln[2])))]
                     for aln in [hsp.split('\t')
                     for hsp in stdout.rstrip().split("\n")]
                     if abs(float(aln[1]) / float(aln[2])) >= self.cutoff/100.0]
-
-            print plus
-            return plus
 
