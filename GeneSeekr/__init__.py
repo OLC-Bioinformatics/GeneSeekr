@@ -17,7 +17,7 @@ class Jackson(ARMISeekr):
         stdout, stderr = blastn()
         if stdout != '':
             return [[fasta, aln[0],
-                     (lambda x: "{0.2d}%%".format(x) if x <= 100 else '+')(abs(float(aln[1]) / float(aln[2])))]
+                     (lambda x: "{0.2d}%%".format(x) if x <= 100.0 else '+')(abs(float(aln[1]) / float(aln[2])))]
                     for aln in [hsp.split('\t')
                     for hsp in stdout.rstrip().split("\n")]
                     if abs(float(aln[1]) / float(aln[2])) >= self.cutoff/100.0]
