@@ -32,7 +32,7 @@ if __name__ == '__main__':
                                         'Use to find markers for any bacterial genome',
                             parents=[parent])
     parser.add_argument('-a', '--anti', type=str
-                        , default=os.path.join(os.path.dirname(ARMI_Lt.__file__) ,'data/aro.conf')
+                        , default=os.path.join(os.path.dirname(ARMI_Lt.__file__) ,'data/aro.dat')
                         , help='JSON file location')
     parser.set_defaults(cutoff=70)
     args = vars(parser.parse_args())
