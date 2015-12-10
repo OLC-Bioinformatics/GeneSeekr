@@ -7,6 +7,8 @@ setup(
     name='pythonGeneSeekr',
     version='0.5dev2',
     packages=['GeneSeekr'],
+    package_data={'': ['GeneSeekr/data/aro.dat']},
+    include_package_data=True,
     url='https://github.com/OLC-Bioinformatics/pythonGeneSeekr',
     license='MIT',
     author='mike knowles',

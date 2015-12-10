@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from GeneSeekr.MLSTSeekr import ARMISeekr
+from GeneSeekr import ARMI_Lt
 __author__ = 'mike knowles'
 
 
@@ -16,7 +16,7 @@ def helper(genes, targets, out, cuttoff, aro, threads):
     ispath = (lambda x: glob(x + "/*.fa*") if os.path.isdir(x) else [x])
     genes = ispath(genes)
     targets = ispath(targets)
-    result = ARMISeekr(genes, targets, threads)
+    result = ARMI_Lt.ARMISeekr(genes, targets, threads)
     result.mpblast(cuttoff)
     json.dump(result.plus, open("%s/ARMI-gene_results_%s.json" % (out, time.strftime("%Y.%m.%d.%H.%M.%S")), 'w'),
               sort_keys=True, indent=4, separators=(',', ': '))
@@ -26,10 +26,14 @@ def helper(genes, targets, out, cuttoff, aro, threads):
 if __name__ == '__main__':
     from argparse import ArgumentParser
     from GeneSeekr.MLSTSeekr import parent
+    import os
     parser = ArgumentParser(description='Antibiotic Resistance Marker Identifier:\n'
                                         'Use to find markers for any bacterial genome',
                             parents=[parent])
-    parser.add_argument('-a', '--anti', type=str, required=True, help='JSON file location')
+    parser.add_argument('-a', '--anti', type=str
+                        , default=os.path.join(os.path.dirname(ARMI_Lt.__file__) ,'data/aro.conf')
+                        , help='JSON file location')
     parser.set_defaults(cutoff=70)
     args = vars(parser.parse_args())
+
     helper(args['marker'], args['input'], args['output'], args['cutoff'], args['anti'], args['threads'])
