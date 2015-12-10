@@ -2,6 +2,7 @@
 import os
 import sys
 import time
+import signal
 from collections import defaultdict
 from Bio.Application import _Option, AbstractCommandline, _Switch
 from Bio.Blast.Applications import NcbiblastnCommandline
@@ -11,6 +12,8 @@ __author__ = 'mike knowles'
 __doc__ = 'The purpose of this set of modules is to improve upon earlier development of ARMISeekr.py and eventually' \
           'to include generalized functionality for with OOP for GeneSeekr'
 
+def init_worker():
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
 
 class MakeBlastDB(AbstractCommandline):
     """Base makeblastdb wrapper"""
@@ -127,14 +130,19 @@ class ARMISeekr(object):
         start = time.time()
         p = Pool(12)
         for genes in self.db:
-            mapblast = p.map(self._blast, [(genome, genes) for genome in self.query])
-            for fastaline in mapblast:
-                if fastaline is not None:  # if the returned list contains [genome, gene, value]
-                    for fasta, gene, v in fastaline:  # unpack
-                        if gene not in self.genelist:
-                            self.genelist.append(gene)  # create list of all genes in anaylsis
-                        self.plus[fasta][gene].append(v)
-                        self.plus[fasta][gene].sort()
+            try:
+                mapblast = p.map(self._blast, [(genome, genes) for genome in self.query])
+                for fastaline in mapblast:
+                    if fastaline is not None:  # if the returned list contains [genome, gene, value]
+                        for fasta, gene, v in fastaline:  # unpack
+                            if gene not in self.genelist:
+                                self.genelist.append(gene)  # create list of all genes in anaylsis
+                            self.plus[fasta][gene].append(v)
+                            self.plus[fasta][gene].sort()
+            except KeyboardInterrupt:
+                p.terminate()
+                p.join()
+
         print "[{}] Now compiling BLAST database results".format(time.strftime("%H:%M:%S"))
         end = time.time() - start
         print "[{0:s}] Elapsed time for GeneSeekr is {1:0d}m {2:0d}s with {3:0.2f}s per genome".format(
