@@ -107,7 +107,12 @@ class ARMISeekr(object):
         self.plus = dict((target, defaultdict(list)) for target in self.query)  # Initialize :return dict
         print '[{}] GeneSeekr input is path with {} files'.format(time.strftime("%H:%M:%S"), len(query))
         print "[{}] Creating necessary databases for BLAST".format(time.strftime("%H:%M:%S"))
-        Pool(self.threads).map(makeblastdb, zip(self.subject, self.db))
+        pool = Pool(self.threads)
+        try:
+            pool.map(makeblastdb, zip(self.subject, self.db))
+        except KeyboardInterrupt:
+            pool.terminate()
+            pool.join()
         print "\r[{0}] BLAST database(s) created".format(time.strftime("%H:%M:%S"))
 
     def _blast(self, (fasta, db)):
