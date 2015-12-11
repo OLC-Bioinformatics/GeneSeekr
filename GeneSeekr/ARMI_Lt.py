@@ -12,6 +12,8 @@ __author__ = 'mike knowles'
 __doc__ = 'The purpose of this set of modules is to improve upon earlier development of ARMISeekr.py and eventually' \
           'to include generalized functionality for with OOP for GeneSeekr'
 
+def init_worker():
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
 
 class MakeBlastDB(AbstractCommandline):
     """Base makeblastdb wrapper"""
@@ -105,7 +107,7 @@ class ARMISeekr(object):
         self.plus = dict((target, defaultdict(list)) for target in self.query)  # Initialize :return dict
         print '[{}] GeneSeekr input is path with {} files'.format(time.strftime("%H:%M:%S"), len(query))
         print "[{}] Creating necessary databases for BLAST".format(time.strftime("%H:%M:%S"))
-        pool = Pool(self.threads)
+        pool = Pool(self.threads, init_worker)
         try:
             pool.map(makeblastdb, zip(self.subject, self.db))
         except KeyboardInterrupt:
@@ -114,7 +116,6 @@ class ARMISeekr(object):
         print "\r[{0}] BLAST database(s) created".format(time.strftime("%H:%M:%S"))
 
     def _blast(self, (fasta, db)):
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
         blastn = NcbiblastnCommandline(query=fasta,
                                        db=db,
                                        evalue=10,
@@ -132,7 +133,7 @@ class ARMISeekr(object):
         self.cutoff = cutoff
         print "[{}] Now performing and parsing BLAST database searches".format(time.strftime("%H:%M:%S"))
         start = time.time()
-        p = Pool(12)
+        p = Pool(self.threads, init_worker)
         for genes in self.db:
             try:
                 mapblast = p.map(self._blast, [(genome, genes) for genome in self.query])
@@ -171,7 +172,6 @@ class ARMISeekr(object):
 
 
 def makeblastdb((fasta, db)):
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
     if not os.path.isfile('{}.nhr'.format(db)):  # add nhr for searching
         assert os.path.isfile(fasta)  # check that the fasta has been specified properly
         MakeBlastDB(db=fasta, out=db, dbtype='nucl')()  # Use MakeBlastDB above
