@@ -114,7 +114,7 @@ class ARMISeekr(object):
         except KeyboardInterrupt:
             print "[{0:s}] Got ^C while pool mapping, terminating the pool".format(time.strftime("%H:%M:%S"))
             pool.terminate()
-            print 'pool is terminated'
+            print '[{0:s}] pool is terminated'
             sys.exit(127)
         except Exception, e:
             print "[{0:s}] Got exception: {1!r:s}, terminating the pool".format(e, time.strftime("%H:%M:%S"))
@@ -140,6 +140,7 @@ class ARMISeekr(object):
         try:
             return self._blast(data)
         except KeyboardInterrupt:
+            signal.signal(signal.SIGINT, signal.SIG_IGN)
             raise KeyboardInterruptError()
 
     def mpblast(self, cutoff=70):
@@ -160,12 +161,12 @@ class ARMISeekr(object):
                             self.plus[fasta][gene].sort()
             except KeyboardInterrupt:
                 print "[{0:s}] Got ^C while pool mapping, terminating the pool".format(time.strftime("%H:%M:%S"))
-                # p.terminate()
-                print 'pool is terminated'
+                p.terminate()
+                print '[{0:s}] Pool is terminated'.format(time.strftime("%H:%M:%S"))
                 sys.exit(127)
             except Exception, e:
                 print "[{0:s}] Got exception: {1!r:s}, terminating the pool".format(e, time.strftime("%H:%M:%S"))
-                # p.terminate()
+                p.terminate()
                 print "[{0:s}] Pool is terminated".format(time.strftime("%H:%M:%S"))
                 sys.exit(127)
 
