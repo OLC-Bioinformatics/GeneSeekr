@@ -12,6 +12,7 @@ __author__ = 'mike knowles'
 __doc__ = 'The purpose of this set of modules is to improve upon earlier development of ARMISeekr.py and eventually' \
           'to include generalized functionality for with OOP for GeneSeekr'
 
+
 class KeyboardInterruptError(Exception): pass
 
 
@@ -123,18 +124,21 @@ class ARMISeekr(object):
         print "\r[{0}] BLAST database(s) created".format(time.strftime("%H:%M:%S"))
 
     def _blast(self, (fasta, db)):
+        blastn = NcbiblastnCommandline(query=fasta,
+                                       db=db,
+                                       evalue=10,
+                                       outfmt="'6 sseqid nident slen'",
+                                       perc_identity=self.cutoff)
+        stdout, stderr = blastn()
+        if stdout != '':
+            return [[fasta, aln[0][4:], abs(float(aln[1]) / float(aln[2]))]
+                    for aln in [hsp.split('\t')
+                                for hsp in stdout.rstrip().split("\n")]
+                    if abs(float(aln[1]) / float(aln[2])) >= self.cutoff/100.0]
+
+    def _key(self, data):
         try:
-            blastn = NcbiblastnCommandline(query=fasta,
-                                           db=db,
-                                           evalue=10,
-                                           outfmt="'6 sseqid nident slen'",
-                                           perc_identity=self.cutoff)
-            stdout, stderr = blastn()
-            if stdout != '':
-                return [[fasta, aln[0][4:], abs(float(aln[1]) / float(aln[2]))]
-                        for aln in [hsp.split('\t')
-                                    for hsp in stdout.rstrip().split("\n")]
-                        if abs(float(aln[1]) / float(aln[2])) >= self.cutoff/100.0]
+            return self._blast(data)
         except KeyboardInterrupt:
             raise KeyboardInterruptError()
 
@@ -146,7 +150,7 @@ class ARMISeekr(object):
         p = Pool(self.threads)
         for genes in self.db:
             try:
-                mapblast = p.map(self._blast, [(genome, genes) for genome in self.query])
+                mapblast = p.map(self._key, [(genome, genes) for genome in self.query])
                 for fastaline in mapblast:
                     if fastaline is not None:  # if the returned list contains [genome, gene, value]
                         for fasta, gene, v in fastaline:  # unpack
