@@ -14,6 +14,10 @@ __doc__ = 'The purpose of this set of modules is to improve upon earlier develop
 
 class KeyboardInterruptError(Exception): pass
 
+def signal_handler(signal, frame):
+    print 'You pressed Ctrl+C!'
+    sys.exit(0)
+
 class MakeBlastDB(AbstractCommandline):
     """Base makeblastdb wrapper"""
     def __init__(self, cmd='makeblastdb', **kwargs):
@@ -122,6 +126,7 @@ class ARMISeekr(object):
         print "\r[{0}] BLAST database(s) created".format(time.strftime("%H:%M:%S"))
 
     def _blast(self, (fasta, db)):
+        signal.signal(signal.SIGINT, signal_handler)
         blastn = NcbiblastnCommandline(query=fasta,
                                        db=db,
                                        evalue=10,
