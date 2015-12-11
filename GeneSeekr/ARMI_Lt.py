@@ -12,8 +12,7 @@ __author__ = 'mike knowles'
 __doc__ = 'The purpose of this set of modules is to improve upon earlier development of ARMISeekr.py and eventually' \
           'to include generalized functionality for with OOP for GeneSeekr'
 
-def init_worker():
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
+class KeyboardInterruptError(Exception): pass
 
 class MakeBlastDB(AbstractCommandline):
     """Base makeblastdb wrapper"""
@@ -107,12 +106,19 @@ class ARMISeekr(object):
         self.plus = dict((target, defaultdict(list)) for target in self.query)  # Initialize :return dict
         print '[{}] GeneSeekr input is path with {} files'.format(time.strftime("%H:%M:%S"), len(query))
         print "[{}] Creating necessary databases for BLAST".format(time.strftime("%H:%M:%S"))
-        pool = Pool(self.threads, init_worker)
+        pool = Pool(self.threads)
         try:
             pool.map(makeblastdb, zip(self.subject, self.db))
         except KeyboardInterrupt:
+            print "[{0:s}] Got ^C while pool mapping, terminating the pool".format(time.strftime("%H:%M:%S"))
             pool.terminate()
-            pool.join()
+            print 'pool is terminated'
+            sys.exit(127)
+        except Exception, e:
+            print "[{0:s}] Got exception: {1!r:s}, terminating the pool".format(e, time.strftime("%H:%M:%S"))
+            pool.terminate()
+            print "[{0:s}] Pool is terminated".format(time.strftime("%H:%M:%S"))
+            sys.exit(127)
         print "\r[{0}] BLAST database(s) created".format(time.strftime("%H:%M:%S"))
 
     def _blast(self, (fasta, db)):
@@ -128,12 +134,19 @@ class ARMISeekr(object):
                                 for hsp in stdout.rstrip().split("\n")]
                     if abs(float(aln[1]) / float(aln[2])) >= self.cutoff/100.0]
 
+    def _key(self, data):
+        try:
+            return self._blast(data)
+        except KeyboardInterrupt:
+            raise KeyboardInterruptError()
+
+
     def mpblast(self, cutoff=70):
         assert isinstance(cutoff, int), u'Cutoff is not an integer {0!r:s}'.format(cutoff)
         self.cutoff = cutoff
-        print "[{}] Now performing and parsing BLAST database searches".format(time.strftime("%H:%M:%S"))
+        print "[{0:s}] Now performing and parsing BLAST database searches".format(time.strftime("%H:%M:%S"))
         start = time.time()
-        p = Pool(self.threads, init_worker)
+        p = Pool(self.threads)
         for genes in self.db:
             try:
                 mapblast = p.map(self._blast, [(genome, genes) for genome in self.query])
@@ -145,8 +158,15 @@ class ARMISeekr(object):
                             self.plus[fasta][gene].append(v)
                             self.plus[fasta][gene].sort()
             except KeyboardInterrupt:
+                print "[{0:s}] Got ^C while pool mapping, terminating the pool".format(time.strftime("%H:%M:%S"))
                 p.terminate()
-                p.join()
+                print 'pool is terminated'
+                sys.exit(127)
+            except Exception, e:
+                print "[{0:s}] Got exception: {1!r:s}, terminating the pool".format(e, time.strftime("%H:%M:%S"))
+                p.terminate()
+                print "[{0:s}] Pool is terminated".format(time.strftime("%H:%M:%S"))
+                sys.exit(127)
 
         print "[{}] Now compiling BLAST database results".format(time.strftime("%H:%M:%S"))
         end = time.time() - start
@@ -172,7 +192,10 @@ class ARMISeekr(object):
 
 
 def makeblastdb((fasta, db)):
-    if not os.path.isfile('{}.nhr'.format(db)):  # add nhr for searching
-        assert os.path.isfile(fasta)  # check that the fasta has been specified properly
-        MakeBlastDB(db=fasta, out=db, dbtype='nucl')()  # Use MakeBlastDB above
-    return 0
+    try:
+        if not os.path.isfile('{}.nhr'.format(db)):  # add nhr for searching
+            assert os.path.isfile(fasta)  # check that the fasta has been specified properly
+            MakeBlastDB(db=fasta, out=db, dbtype='nucl')()  # Use MakeBlastDB above
+        return 0
+    except KeyboardInterrupt:
+            raise KeyboardInterruptError()
