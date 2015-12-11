@@ -14,9 +14,6 @@ __doc__ = 'The purpose of this set of modules is to improve upon earlier develop
 
 class KeyboardInterruptError(Exception): pass
 
-def signal_handler(signal, frame):
-    print 'You pressed Ctrl+C!'
-    sys.exit(0)
 
 class MakeBlastDB(AbstractCommandline):
     """Base makeblastdb wrapper"""
@@ -126,25 +123,20 @@ class ARMISeekr(object):
         print "\r[{0}] BLAST database(s) created".format(time.strftime("%H:%M:%S"))
 
     def _blast(self, (fasta, db)):
-        signal.signal(signal.SIGINT, signal_handler)
-        blastn = NcbiblastnCommandline(query=fasta,
-                                       db=db,
-                                       evalue=10,
-                                       outfmt="'6 sseqid nident slen'",
-                                       perc_identity=self.cutoff)
-        stdout, stderr = blastn()
-        if stdout != '':
-            return [[fasta, aln[0][4:], abs(float(aln[1]) / float(aln[2]))]
-                    for aln in [hsp.split('\t')
-                                for hsp in stdout.rstrip().split("\n")]
-                    if abs(float(aln[1]) / float(aln[2])) >= self.cutoff/100.0]
-
-    def _key(self, data):
         try:
-            return self._blast(data)
+            blastn = NcbiblastnCommandline(query=fasta,
+                                           db=db,
+                                           evalue=10,
+                                           outfmt="'6 sseqid nident slen'",
+                                           perc_identity=self.cutoff)
+            stdout, stderr = blastn()
+            if stdout != '':
+                return [[fasta, aln[0][4:], abs(float(aln[1]) / float(aln[2]))]
+                        for aln in [hsp.split('\t')
+                                    for hsp in stdout.rstrip().split("\n")]
+                        if abs(float(aln[1]) / float(aln[2])) >= self.cutoff/100.0]
         except KeyboardInterrupt:
-            sys.exit(127)
-
+            raise KeyboardInterruptError()
 
     def mpblast(self, cutoff=70):
         assert isinstance(cutoff, int), u'Cutoff is not an integer {0!r:s}'.format(cutoff)
