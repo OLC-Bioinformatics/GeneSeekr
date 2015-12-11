@@ -138,7 +138,7 @@ class ARMISeekr(object):
         try:
             return self._blast(data)
         except KeyboardInterrupt:
-            raise KeyboardInterruptError()
+            sys.exit(127)
 
 
     def mpblast(self, cutoff=70):
