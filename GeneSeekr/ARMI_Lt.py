@@ -161,9 +161,9 @@ class ARMISeekr(object):
                             self.plus[fasta][gene].sort()
             except KeyboardInterrupt:
                 print "[{0:s}] Got ^C while pool mapping, terminating the pool".format(time.strftime("%H:%M:%S"))
-                p.terminate()
+                # p.terminate()
                 print '[{0:s}] Pool is terminated'.format(time.strftime("%H:%M:%S"))
-                sys.exit(127)
+                sys.exit(0)
             except Exception, e:
                 print "[{0:s}] Got exception: {1!r:s}, terminating the pool".format(e, time.strftime("%H:%M:%S"))
                 p.terminate()
