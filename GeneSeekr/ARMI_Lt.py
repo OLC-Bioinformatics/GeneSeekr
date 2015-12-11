@@ -12,8 +12,6 @@ __author__ = 'mike knowles'
 __doc__ = 'The purpose of this set of modules is to improve upon earlier development of ARMISeekr.py and eventually' \
           'to include generalized functionality for with OOP for GeneSeekr'
 
-def init_worker():
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
 
 class MakeBlastDB(AbstractCommandline):
     """Base makeblastdb wrapper"""
@@ -116,6 +114,7 @@ class ARMISeekr(object):
         print "\r[{0}] BLAST database(s) created".format(time.strftime("%H:%M:%S"))
 
     def _blast(self, (fasta, db)):
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
         blastn = NcbiblastnCommandline(query=fasta,
                                        db=db,
                                        evalue=10,
@@ -172,6 +171,7 @@ class ARMISeekr(object):
 
 
 def makeblastdb((fasta, db)):
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
     if not os.path.isfile('{}.nhr'.format(db)):  # add nhr for searching
         assert os.path.isfile(fasta)  # check that the fasta has been specified properly
         MakeBlastDB(db=fasta, out=db, dbtype='nucl')()  # Use MakeBlastDB above
