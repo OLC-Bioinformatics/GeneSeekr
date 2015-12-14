@@ -1,32 +1,32 @@
 #!/usr/bin/env python
-from GeneSeekr import Jackson
+from GeneSeekr.MLSTSeekr import GeneSeekr
 __author__ = 'mike knowles'
 
 
-def helper(genes, targets, out, cuttoff, threads):
+def helper(genes, targets, out, cutoff, threads):
     from glob import glob
-    import os
-    import json
+    from json import dump
     import time
+    import os
     assert os.path.isdir(out), u'Output location is not a valid directory {0!r:s}'.format(out)
-    assert os.path.isfile(genes), u'ARMI-genes.fa not valid {0!r:s}'.format(genes)
+    assert os.path.exists(genes), u'rMLST fasta not valid {0!r:s}'.format(genes)
     assert isinstance(threads, int)
     ispath = (lambda x: glob(x + "/*.fa*") if os.path.isdir(x) else [x])
     genes = ispath(genes)
     targets = ispath(targets)
-    result = Jackson(genes, targets, threads)
-    result.mpblast(cuttoff)
-    json.dump(result.plus, open("%s/Jackson-gene_results_%s.json" % (out, time.strftime("%Y.%m.%d.%H.%M.%S")), 'w'),
-              sort_keys=True, indent=4, separators=(',', ': '))
-    result.csvwriter(out, 'Jackson')
+    result = GeneSeekr(genes, targets, threads)
+    result.mpblast(cutoff)
+    dump(result.plus, open("%s/MLST-gene_results_%s.json" % (out, time.strftime("%Y.%m.%d.%H.%M.%S")), 'w'),
+         sort_keys=True, indent=4, separators=(',', ': '))
+    result.csvwriter(out, 'rMLST')
 
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
     from GeneSeekr.MLSTSeekr import parent
-    parser = ArgumentParser(description='Antibiotic Resistance Marker Identifier:\n'
+    parser = ArgumentParser(description='Multilocus Seqeunce Typing Assay with BLAST:\n'
                                         'Use to find markers for any bacterial genome',
                             parents=[parent])
-    parser.set_defaults(cutoff=70)
+    parser.set_defaults(cutoff=100)
     args = vars(parser.parse_args())
     helper(args['marker'], args['input'], args['output'], args['cutoff'], args['threads'])
