@@ -117,7 +117,7 @@ class ARMISeekr(object):
             print '[{0:s}] pool is terminated'
             sys.exit(127)
         except Exception, e:
-            print "[{0:s}] Got exception: {1!r:s}, terminating the pool".format(e, time.strftime("%H:%M:%S"))
+            print "[{0:s}] Got exception: {1!r:s}, terminating the pool".format(time.strftime("%H:%M:%S"), e)
             pool.terminate()
             print "[{0:s}] Pool is terminated".format(time.strftime("%H:%M:%S"))
             sys.exit(127)
@@ -167,7 +167,7 @@ class ARMISeekr(object):
                 print '[{0:s}] Pool is terminated'.format(time.strftime("%H:%M:%S"))
                 sys.exit(127)
             except Exception, e:
-                print "[{0:s}] Got exception: {1!r:s}, terminating the pool".format(e, time.strftime("%H:%M:%S"))
+                print "[{0:s}] Got exception: {1!r:s}, terminating the pool".format(time.strftime("%H:%M:%S"), e)
                 p.terminate()
                 print "[{0:s}] Pool is terminated".format(time.strftime("%H:%M:%S"))
                 sys.exit(127)
@@ -206,4 +206,4 @@ def makeblastdb((fasta, db)):
 
 
 def chunkstring(string, length):
-    return (str(string)[0+i:length+i] for i in range(0, len(str(string)), length))
+    return (string[0+i:length+i] for i in range(0, len(string), length))
