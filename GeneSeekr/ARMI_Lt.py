@@ -166,11 +166,11 @@ class ARMISeekr(object):
                 p.terminate()
                 print '[{0:s}] Pool is terminated'.format(time.strftime("%H:%M:%S"))
                 sys.exit(127)
-            except Exception, e:
-                print "[{0:s}] Got exception: {1!r:s}, terminating the pool".format(time.strftime("%H:%M:%S"), e)
-                p.terminate()
-                print "[{0:s}] Pool is terminated".format(time.strftime("%H:%M:%S"))
-                sys.exit(127)
+            # except Exception, e:
+            #     print "[{0:s}] Got exception: {1!r:s}, terminating the pool".format(time.strftime("%H:%M:%S"), e)
+            #     p.terminate()
+            #     print "[{0:s}] Pool is terminated".format(time.strftime("%H:%M:%S"))
+            #     sys.exit(127)
 
         print "[{}] Now compiling BLAST database results".format(time.strftime("%H:%M:%S"))
         end = time.time() - start
