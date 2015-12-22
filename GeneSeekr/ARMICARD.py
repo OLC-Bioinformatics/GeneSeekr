@@ -86,7 +86,7 @@ def decipher(plusdict, antidict, outputs):
                 sens = analysis.sens()  # check sensitivities
                 if resist is not None:
                    outputdict[genome]["resist"] = dictbuild(outputdict[genome]["resist"]).add(resist)
-                   outputdict[genome]["genes"].append(tuple(gene + plusdict[genome][gene]))
+                   outputdict[genome]["genes"].append(tuple([gene] + plusdict[genome][gene]))
                 if sens is not None:
                     outputdict[genome]["sensitivity"] = dictbuild(outputdict[genome]["sensitivity"]).add(sens)
         outputdict[genome]["genes"].sort(key=lambda tup: tup[0])
