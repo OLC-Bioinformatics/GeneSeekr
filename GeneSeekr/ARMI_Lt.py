@@ -127,11 +127,11 @@ class ARMISeekr(object):
         blastn = NcbiblastnCommandline(query=fasta,
                                        db=db,
                                        evalue=10,
-                                       outfmt="'6 sseqid nident slen'",
+                                       outfmt="'6 sseqid nident slen qacc'",
                                        perc_identity=self.cutoff)
         stdout, stderr = blastn()
         if stdout != '':
-            return [[fasta, list(chunkstring(aln[0][4:], 7)), abs(float(aln[1]) / float(aln[2]))]
+            return [[fasta, list(chunkstring(aln[0][4:], 7)), [abs(float(aln[1]) / float(aln[2]))], aln[3]]
                     for aln in [hsp.split('\t')
                     for hsp in stdout.rstrip().split("\n")]
                     if abs(float(aln[1]) / float(aln[2])) >= self.cutoff/100.0]
