@@ -154,10 +154,9 @@ class ARMISeekr(object):
                 for fastaline in mapblast:
                     if fastaline is not None:  # if the returned list contains [genome, gene, value]
                         for fasta, sgenes, v in fastaline:  # unpack
-                            if not isinstance(genes, list):
+                            if not isinstance(sgenes, list):
                                 sgenes = [sgenes]
                             for gene in sgenes:
-                                print fasta, sgenes, v, gene
                                 if gene not in self.genelist:
                                     self.genelist.extend(gene)  # create list of all genes in analysis
                                 self.plus[fasta][gene].apend(v)
