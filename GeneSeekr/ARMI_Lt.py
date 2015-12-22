@@ -131,7 +131,7 @@ class ARMISeekr(object):
                                        perc_identity=self.cutoff)
         stdout, stderr = blastn()
         if stdout != '':
-            return [[fasta, list(chunkstring(aln[0][4:], 7)), [abs(float(aln[1]) / float(aln[2]))], aln[3]]
+            return [[fasta, list(chunkstring(aln[0][4:], 7)), [abs(float(aln[1]) / float(aln[2])), aln[3]]]
                     for aln in [hsp.split('\t')
                     for hsp in stdout.rstrip().split("\n")]
                     if abs(float(aln[1]) / float(aln[2])) >= self.cutoff/100.0]
