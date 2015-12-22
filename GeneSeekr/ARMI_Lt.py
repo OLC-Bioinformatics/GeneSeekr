@@ -131,10 +131,10 @@ class ARMISeekr(object):
                                        perc_identity=self.cutoff)
         stdout, stderr = blastn()
         if stdout != '':
-            return [[fasta, list(chunkstring(sseqid[4:], 8)), abs(float(nident[1]) / float(slen[2]))]
+            return [[fasta, list(chunkstring(sseqid[4:], 8)), abs(float(nident) / float(slen))]
                     for sseqid, nident, slen in [hsp.split('\t')
                     for hsp in stdout.rstrip().split("\n")]
-                    if abs(float(nident[1]) / float(slen[2])) >= self.cutoff/100.0]
+                    if abs(float(nident) / float(slen)) >= self.cutoff/100.0]
 
     def _key(self, data):
         try:
