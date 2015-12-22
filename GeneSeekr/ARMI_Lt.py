@@ -2,7 +2,6 @@
 import os
 import sys
 import time
-import signal
 from collections import defaultdict
 from Bio.Application import _Option, AbstractCommandline, _Switch
 from Bio.Blast.Applications import NcbiblastnCommandline
@@ -13,7 +12,8 @@ __doc__ = 'The purpose of this set of modules is to improve upon earlier develop
           'to include generalized functionality for with OOP for GeneSeekr'
 
 
-class KeyboardInterruptError(Exception): pass
+class KeyboardInterruptError(Exception):
+    pass
 
 
 class MakeBlastDB(AbstractCommandline):
@@ -131,10 +131,10 @@ class ARMISeekr(object):
                                        perc_identity=self.cutoff)
         stdout, stderr = blastn()
         if stdout != '':
-            return [[fasta, aln[0][4:], abs(float(aln[1]) / float(aln[2]))]
-                    for aln in [hsp.split('\t')
-                                for hsp in stdout.rstrip().split("\n")]
-                    if abs(float(aln[1]) / float(aln[2])) >= self.cutoff/100.0]
+            return [[fasta, list(chunkstring(sseqid[4:], 8)), abs(float(nident[1]) / float(slen[2]))]
+                    for sseqid, nident, slen in [hsp.split('\t')
+                    for hsp in stdout.rstrip().split("\n")]
+                    if abs(float(nident[1]) / float(slen[2])) >= self.cutoff/100.0]
 
     def _key(self, data):
         try:
@@ -153,11 +153,14 @@ class ARMISeekr(object):
                 mapblast = p.map(self._key, [(genome, genes) for genome in self.query])
                 for fastaline in mapblast:
                     if fastaline is not None:  # if the returned list contains [genome, gene, value]
-                        for fasta, gene, v in fastaline:  # unpack
-                            if gene not in self.genelist:
-                                self.genelist.append(gene)  # create list of all genes in anaylsis
-                            self.plus[fasta][gene].append(v)
-                            self.plus[fasta][gene].sort()
+                        for fasta, sgenes, v in fastaline:  # unpack
+                            if not isinstance(genes, list):
+                                sgenes = [sgenes]
+                            for gene in sgenes:
+                                if gene not in self.genelist:
+                                    self.genelist.append(gene)  # create list of all genes in analysis
+                                self.plus[fasta][gene].append(v)
+                                self.plus[fasta][gene].sort()
             except KeyboardInterrupt:
                 print "[{0:s}] Got ^C while pool mapping, terminating the pool".format(time.strftime("%H:%M:%S"))
                 p.terminate()
@@ -200,3 +203,7 @@ def makeblastdb((fasta, db)):
         return 0
     except KeyboardInterrupt:
             raise KeyboardInterruptError()
+
+
+def chunkstring(string, length):
+    return (str(string)[0+i:length+i] for i in range(0, len(str(string)), length))
