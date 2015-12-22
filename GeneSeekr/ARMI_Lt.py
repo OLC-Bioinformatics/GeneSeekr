@@ -159,7 +159,7 @@ class ARMISeekr(object):
                             for gene in sgenes:
                                 if gene not in self.genelist:
                                     self.genelist.append(gene)  # create list of all genes in analysis
-                                self.plus[fasta][gene].append(v)
+                                self.plus[fasta][gene].extend(v)
                                 self.plus[fasta][gene].sort()
             except KeyboardInterrupt:
                 print "[{0:s}] Got ^C while pool mapping, terminating the pool".format(time.strftime("%H:%M:%S"))
