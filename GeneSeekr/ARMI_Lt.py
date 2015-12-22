@@ -132,6 +132,7 @@ class ARMISeekr(object):
         stdout, stderr = blastn()
         if stdout != '':
             for sseqid, nident, slen in [hsp.split('\t') for hsp in stdout.rstrip().split("\n")]:
+                print sseqid, nident, slen
                 if abs(float(nident) / float(slen)) >= self.cutoff/100.0:
                     print sseqid, nident, slen
                     return [fasta, list(chunkstring(sseqid[4:], 8)), abs(float(nident) / float(slen))]
