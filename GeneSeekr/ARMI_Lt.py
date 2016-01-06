@@ -104,9 +104,8 @@ class ARMISeekr(object):
         assert isinstance(subject, list), 'Subject is not a list "{0!r:s}"'.format(subject)
         assert isinstance(query, list), 'Query is not a list"{0!r:s}"'.format(query)
         self.count, self.subject, self.query, self.threads = 0, subject, query, threads
-        self.cutoff, self.genelist = 70, set()
+        self.cutoff, self.genelist, self.plus = 70, set(), dict()
         self.db = map((lambda x: os.path.splitext(x)[0]), subject)  # remove the file extension for easier globing
-        self.plus = dict() #dict((target, defaultdict(list)) for target in self.query)  # Initialize :return dict
         print '[{}] GeneSeekr input is path with {} files'.format(time.strftime("%H:%M:%S"), len(query))
         print "[{}] Creating necessary databases for BLAST".format(time.strftime("%H:%M:%S"))
         pool = Pool(self.threads)
@@ -151,7 +150,7 @@ class ARMISeekr(object):
                         genelist.add(gene)  # create set of all genes in analysis
                         plus[fasta][gene].append(values)
                         plus[fasta][gene].sort()
-                return plus, genelist
+            return plus, genelist
         except KeyboardInterrupt:
             raise KeyboardInterruptError()
 
