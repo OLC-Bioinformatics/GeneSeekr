@@ -132,15 +132,19 @@ class ARMISeekr(object):
         self.yeah()
         stdout, stderr = blastn()
         if stdout != '':
-            return [[list(chunkstring(aln[0][4:], 7)), [abs(float(aln[1]) / float(aln[2])), aln[3]]]
+            result = [[list(chunkstring(aln[0][4:], 7)), [abs(float(aln[1]) / float(aln[2])), aln[3]]]
                     for aln in [hsp.split('\t')
                     for hsp in stdout.rstrip().split("\n")]
                     if abs(float(aln[1]) / float(aln[2])) >= self.cutoff/100.0]
+            print result
+            return result
 
-    def _key(self, (fasta, db)):
+
+    def _key(self, data):
         genelist, plus = list(), defaultdict(list)
         try:
-            for fastaline in self._blast((fasta, db)):
+            fasta = data[0]
+            for fastaline in self._blast(data):
                 if fastaline is not None:  # if the returned list contains [genome, gene, value]
                     for sgenes, values in fastaline:  # unpack
                         for gene in sgenes:
