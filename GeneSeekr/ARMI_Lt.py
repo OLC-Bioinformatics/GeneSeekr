@@ -149,15 +149,15 @@ class ARMISeekr(object):
                       indent=4,
                       separators=(',', ': '))
             print result[1], repr(result[0])
-            for fastaline in result:
-                print fastaline
-                if fastaline is not None:  # if the returned list contains [genome, gene, value]
-                    for sgenes, values in fastaline:  # unpack
-                        for gene in sgenes:
-                            if gene not in genelist:
-                                genelist.extend(gene)
-                            plus[fasta][gene].append(values)
-                            plus[fasta][gene].sort()
+            # for fastaline in result:
+            #     print fastaline
+            #     if fastaline is not None:  # if the returned list contains [genome, gene, value]
+            #         for sgenes, values in fastaline:  # unpack
+            #             for gene in sgenes:
+            #                 if gene not in genelist:
+            #                     genelist.extend(gene)
+            #                 plus[fasta][gene].append(values)
+            #                 plus[fasta][gene].sort()
             return plus, genelist
         except KeyboardInterrupt:
             raise KeyboardInterruptError()
