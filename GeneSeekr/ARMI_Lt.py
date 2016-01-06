@@ -130,7 +130,7 @@ class ARMISeekr(object):
                                        evalue=10e-4,
                                        outfmt="'6 sseqid nident slen qacc'",
                                        perc_identity=self.cutoff)
-        self.yeah()
+        # self.yeah()
         stdout, stderr = blastn()
         if stdout != '':
             return [[list(chunkstring(aln[0][4:], 7)), [abs(float(aln[1]) / float(aln[2])), aln[3]]]
@@ -146,7 +146,7 @@ class ARMISeekr(object):
             result = self._blast(data)
             for fastaline in result:
                 if fastaline is not None:  # if the returned list contains [genome, gene, value]
-                    print len(fastaline)
+                    print fastaline, len(fastaline)
                     # for sgenes, values in fastaline:  # unpack
                     #     print sgenes, values
             #             for gene in sgenes:
