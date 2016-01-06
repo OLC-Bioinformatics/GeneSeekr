@@ -146,6 +146,7 @@ class ARMISeekr(object):
             plus[fasta] = defaultdict(list)
             if result is not None:
                 for sgenes, values in result:
+                    sgenes = sgenes if isinstance(sgenes, list) else [sgenes]
                     for gene in sgenes:
                         genelist.add(gene)  # create set of all genes in analysis
                         plus[fasta][gene].append(values)
