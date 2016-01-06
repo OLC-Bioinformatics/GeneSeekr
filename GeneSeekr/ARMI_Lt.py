@@ -144,13 +144,8 @@ class ARMISeekr(object):
         try:
             fasta = data[0]
             result = self._blast(data)
-            json.dump(result,
-                      open("/nas/knowlesm/amr/ARMI_BLAST_results_%s.json" % time.strftime("%Y.%m.%d.%H.%M.%S"), 'w'),
-                      indent=4,
-                      separators=(',', ': '))
-            print result[1], repr(result[0])
-            # for fastaline in result:
-            #     print fastaline
+            for fastaline in result:
+                print fastaline
             #     if fastaline is not None:  # if the returned list contains [genome, gene, value]
             #         for sgenes, values in fastaline:  # unpack
             #             for gene in sgenes:
