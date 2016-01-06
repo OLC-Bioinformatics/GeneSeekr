@@ -142,7 +142,8 @@ class ARMISeekr(object):
         genelist, plus = list(), defaultdict(list)
         try:
             fasta = data[0]
-            for fastaline in self._blast(data):
+            result = self._blast(data)
+            for fastaline in result:
                 print fastaline
                 if fastaline is not None:  # if the returned list contains [genome, gene, value]
                     for sgenes, values in fastaline:  # unpack
