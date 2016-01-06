@@ -144,16 +144,12 @@ class ARMISeekr(object):
         try:
             fasta = data[0]
             result = self._blast(data)
-            for fastaline in result:
-                if fastaline is not None:  # if the returned list contains [genome, gene, value]
-                    print fastaline, len(fastaline)
-                    # for sgenes, values in fastaline:  # unpack
-                    #     print sgenes, values
-            #             for gene in sgenes:
-            #                 if gene not in genelist:
-            #                     genelist.extend(gene)
-            #                 plus[fasta][gene].append(values)
-            #                 plus[fasta][gene].sort()
+            for sgenes, values in result:
+                for gene in sgenes:
+                    if gene not in genelist:
+                        genelist.extend(gene)
+                    plus[fasta][gene].append(values)
+                    plus[fasta][gene].sort()
             return plus, genelist
         except KeyboardInterrupt:
             raise KeyboardInterruptError()
