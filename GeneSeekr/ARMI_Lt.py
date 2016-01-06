@@ -140,10 +140,11 @@ class ARMISeekr(object):
 
 
     def _key(self, data):
-        genelist, plus = set(), defaultdict(list)
+        genelist, plus = set(), dict()
         try:
             fasta = data[0]
             result = self._blast(data)
+            plus[fasta] = defaultdict(list)
             for sgenes, values in result:
                 for gene in sgenes:
                     print fasta, gene, values
