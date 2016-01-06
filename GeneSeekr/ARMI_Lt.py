@@ -143,7 +143,7 @@ class ARMISeekr(object):
         try:
             fasta = data[0]
             result = self._blast(data)
-            print result[1]
+            print result[1], repr(result[0])
             for fastaline in result:
                 print fastaline
                 if fastaline is not None:  # if the returned list contains [genome, gene, value]
