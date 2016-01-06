@@ -140,14 +140,14 @@ class ARMISeekr(object):
 
 
     def _key(self, data):
-        genelist, plus = list(), defaultdict(list)
+        genelist, plus = set(), defaultdict(list)
         try:
             fasta = data[0]
             result = self._blast(data)
             for sgenes, values in result:
                 for gene in sgenes:
-                    if gene not in genelist:
-                        genelist.extend(gene)
+                    print fasta, gene, values
+                    genelist.add(gene)  # create set of all genes in analysis
                     plus[fasta][gene].append(values)
                     plus[fasta][gene].sort()
             return plus, genelist
