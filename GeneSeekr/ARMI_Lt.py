@@ -6,6 +6,7 @@ from collections import defaultdict
 from Bio.Application import _Option, AbstractCommandline, _Switch
 from Bio.Blast.Applications import NcbiblastnCommandline
 from multiprocessing import Pool
+import json
 __author__ = 'mike knowles'
 
 __doc__ = 'The purpose of this set of modules is to improve upon earlier development of ARMISeekr.py and eventually' \
@@ -143,6 +144,10 @@ class ARMISeekr(object):
         try:
             fasta = data[0]
             result = self._blast(data)
+            json.dump(result,
+                      open("/nas/knowlesm/amr/ARMI_BLAST_results_%s.json" % time.strftime("%Y.%m.%d.%H.%M.%S"), 'w'),
+                      indent=4,
+                      separators=(',', ': '))
             print result[1], repr(result[0])
             for fastaline in result:
                 print fastaline
