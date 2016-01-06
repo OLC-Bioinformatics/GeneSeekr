@@ -146,10 +146,11 @@ class ARMISeekr(object):
             result = self._blast(data)
             plus[fasta] = defaultdict(list)
             for sgenes, values in result:
-                for gene in sgenes:
-                    genelist.add(gene)  # create set of all genes in analysis
-                    plus[fasta][gene].append(values)
-                    plus[fasta][gene].sort()
+                if (sgenes, values) is not (None, None):
+                    for gene in sgenes:
+                        genelist.add(gene)  # create set of all genes in analysis
+                        plus[fasta][gene].append(values)
+                        plus[fasta][gene].sort()
             return plus, genelist
         except KeyboardInterrupt:
             raise KeyboardInterruptError()
