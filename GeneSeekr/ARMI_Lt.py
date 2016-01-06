@@ -106,7 +106,7 @@ class ARMISeekr(object):
         self.count, self.subject, self.query, self.threads = 0, subject, query, threads
         self.cutoff, self.genelist = 70, []
         self.db = map((lambda x: os.path.splitext(x)[0]), subject)  # remove the file extension for easier globing
-        self.plus = dict((target, defaultdict(list)) for target in self.query)  # Initialize :return dict
+        self.plus = dict() #dict((target, defaultdict(list)) for target in self.query)  # Initialize :return dict
         print '[{}] GeneSeekr input is path with {} files'.format(time.strftime("%H:%M:%S"), len(query))
         print "[{}] Creating necessary databases for BLAST".format(time.strftime("%H:%M:%S"))
         pool = Pool(self.threads)
