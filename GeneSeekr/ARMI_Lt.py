@@ -129,16 +129,26 @@ class ARMISeekr(object):
                                        evalue=10e-4,
                                        outfmt="'6 sseqid nident slen qacc'",
                                        perc_identity=self.cutoff)
+        self.yeah()
         stdout, stderr = blastn()
         if stdout != '':
-            return [[fasta, list(chunkstring(aln[0][4:], 7)), [abs(float(aln[1]) / float(aln[2])), aln[3]]]
+            return [[list(chunkstring(aln[0][4:], 7)), [abs(float(aln[1]) / float(aln[2])), aln[3]]]
                     for aln in [hsp.split('\t')
                     for hsp in stdout.rstrip().split("\n")]
                     if abs(float(aln[1]) / float(aln[2])) >= self.cutoff/100.0]
 
-    def _key(self, data):
+    def _key(self, (fasta, db)):
+        genelist, plus = list(), defaultdict(list)
         try:
-            return self._blast(data)
+            for fastaline in self._blast((fasta, db)):
+                if fastaline is not None:  # if the returned list contains [genome, gene, value]
+                    for sgenes, values in fastaline:  # unpack
+                        for gene in sgenes:
+                            if gene not in genelist:
+                                genelist.extend(gene)
+                            plus[fasta][gene].append(values)
+                            plus[fasta][gene].sort()
+            return plus, genelist
         except KeyboardInterrupt:
             raise KeyboardInterruptError()
 
@@ -151,16 +161,17 @@ class ARMISeekr(object):
         for genes in self.db:
             try:
                 mapblast = p.map(self._key, [(genome, genes) for genome in self.query])
-                for fastaline in mapblast:
-                    if fastaline is not None:  # if the returned list contains [genome, gene, value]
-                        for fasta, sgenes, v in fastaline:  # unpack
-                            if not isinstance(sgenes, list):
-                                sgenes = [sgenes]
-                            for gene in sgenes:
-                                if gene not in self.genelist:
-                                    self.genelist.extend(gene)  # create list of all genes in analysis
-                                self.plus[fasta][gene].append(v)
-                                self.plus[fasta][gene].sort()
+                # for fastaline in mapblast:
+                #     if fastaline is not None:  # if the returned list contains [genome, gene, value]
+                #         for fasta, sgenes, v in fastaline:  # unpack
+                #             for gene in sgenes:
+                #                 if gene not in self.genelist:
+                #                     self.genelist.extend(gene)  # create list of all genes in analysis
+                #                 self.plus[fasta][gene].append(v)
+                #                 self.plus[fasta][gene].sort()
+                for plus, genelist in mapblast:
+                    self.genelist = set(self.genelist | genelist)
+                    self.plus.update(plus)
             except KeyboardInterrupt:
                 print "[{0:s}] Got ^C while pool mapping, terminating the pool".format(time.strftime("%H:%M:%S"))
                 p.terminate()
