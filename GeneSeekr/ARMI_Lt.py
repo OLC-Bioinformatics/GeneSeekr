@@ -147,7 +147,6 @@ class ARMISeekr(object):
             plus[fasta] = defaultdict(list)
             for sgenes, values in result:
                 for gene in sgenes:
-                    print fasta, gene, values
                     genelist.add(gene)  # create set of all genes in analysis
                     plus[fasta][gene].append(values)
                     plus[fasta][gene].sort()
