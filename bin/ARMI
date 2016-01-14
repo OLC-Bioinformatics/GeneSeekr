@@ -14,7 +14,7 @@ def helper(genes, targets, out, cuttoff, aro, threads):
     assert os.path.isfile(genes), u'ARMI-genes.fa not valid {0!r:s}'.format(genes)
     assert os.path.isfile(aro), u'Antibiotic JSON not valid {0!r:s}'.format(aro)
     assert isinstance(threads, int)
-    ispath = (lambda x: glob(x + "/*.fa*") if os.path.isdir(x) else [x])
+    ispath = (lambda x: glob(x + '/*.f*[sa]') if os.path.isdir(x) else [x])
     genes = ispath(genes)
     targets = ispath(targets)
     result = ARMI_Lt.ARMISeekr(genes, targets, threads)

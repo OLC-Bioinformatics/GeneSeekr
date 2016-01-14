@@ -11,7 +11,7 @@ def helper(genes, targets, out, cuttoff, threads):
     assert os.path.isdir(out), u'Output location is not a valid directory {0!r:s}'.format(out)
     assert os.path.isfile(genes), u'ARMI-genes.fa not valid {0!r:s}'.format(genes)
     assert isinstance(threads, int)
-    ispath = (lambda x: glob(x + "/*.fa*") if os.path.isdir(x) else [x])
+    ispath = (lambda x: glob(x + "/*.f*[sa]") if os.path.isdir(x) else [x])
     genes = ispath(genes)
     targets = ispath(targets)
     result = Jackson(genes, targets, threads)
