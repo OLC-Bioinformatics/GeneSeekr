@@ -1,8 +1,8 @@
-__author__ = 'mike knowles'
-
 import json
 import time
 import os
+from collections import defaultdict
+__author__ = 'mike knowles'
 
 
 class Card():
@@ -18,27 +18,33 @@ class Card():
     sens will :return a list of sensitivities for a given gene
         .sens()
     '''
-    def __init__(self, antidict, index):  # Initialize class and inherit self
+    def __init__(self, antidict, index, plusdict=None):  # Initialize class and inherit self
         self.index = index  # Defines a gene number that can be passed to functions within the class
         self.antidict = antidict
+        self.plusdict = plusdict
 
     def resist(self, genome=None):  # Begin resist function and import initialized self
-        resistlist = []  # Initialize list
-        if "resist" in self.antidict[self.index]:  # If the key "resist" in gene
-            if "complex" in self.antidict[self.index] and genome is not None:
+        resistlist = []  # Initialize dict
+        genedict = self.antidict[self.index]
+        if "resist" in genedict:  # If the key "resist" in gene
+            if "member" in genedict and genome is not None:  # check if dependencies are satisfied
+                mdict = {self.index: [memb for memb in genedict['member'] if memb in self.plusdict]}
+                if len(mdict[self.index]) == len(genedict['member']):  # check if the list of requirements is complete
+                    mdict[self.index].sort()
+                    resistlist.extend([dict((resist, mdict) for resist in genedict['resist'])])  # create list of dicts
+            elif "complex" in genedict and genome is not None:
                 '''If the key complex in gene defines their are depenedenies'''
-                count = 0  # for each resistance set count at zero
-                for complex in self.antidict[self.index]["complex"]:  # Allow for multiple dependencies
-                    count += 1
-                    if len(self.antidict[self.index]["complex"]) >= count:  # if complexes are satisfied
-                        resistlist.extend(self.antidict[self.index]["resist"])  # extend the list
+                # count = 0  # for each resistance set count at zero
+                for complex in genedict["complex"]:  # Allow for multiple dependencies
+                    resistlist.extend(Card(self.antidict, complex, self.plusdict).resist(genome))
+                    # recurse through the same class if complexes are satisfied extend the list
             else:  # if no complex then just return the list
-                resistlist.extend(self.antidict[self.index]["resist"])
-        if "isa" in self.antidict[self.index]:  # Recursion for parent antibiotic traits
-            for depend in self.antidict[self.index]["isa"]:
+                resistlist.extend([dict((resist, [self.index]) for resist in genedict['resist'])])
+        if "isa" in genedict:  # Recursion for parent antibiotic traits
+            for depend in genedict["isa"]:
                 for amr in Card(self.antidict, depend).resist(genome):  # Call self to recurse through the same class
-                    if amr not in resistlist:
-                        resistlist.append(amr)
+                    # if amr not in resistlist:
+                    resistlist.append(amr)
                 # resistlist.extend(self.resist(genome))  # Call self to recurse through the same class
         return resistlist  # return the extended list
 
@@ -76,21 +82,28 @@ class dictbuild():
 def decipher(plusdict, antidict, outputs):
     outputdict = {}
     for genome in sorted(plusdict):  # iterate through plus dict
-        outputdict[genome] = {"resist": [], "sensitivity": [], "genes": []}
+        outputdict[genome] = {"resist": defaultdict(list), "sensitivity": [], "genes": []}
         resistance = outputdict[genome]["resist"]
         for gene in plusdict[genome]:
-            analysis = Card(antidict, gene)
-            # refgene = plusdict[genome][gene]
+            analysis = Card(antidict, gene, plusdict[genome])
             if plusdict[genome][gene]:
-                resist = analysis.resist(genome)  # check resistances
+
                 sens = analysis.sens()  # check sensitivities
-                if resist is not None:
-                   outputdict[genome]["resist"] = dictbuild(outputdict[genome]["resist"]).add(resist)
-                   outputdict[genome]["genes"].append(tuple([gene] + plusdict[genome][gene]))
+                for resist in analysis.resist(genome):  # check resistances
+                    if resist is not None:
+                        for aro in resist:
+                            if resist[aro] not in resistance[aro]:
+                                if type(resist[aro]) is dict:
+                                    resistance[aro].append(resist[aro])
+                                else:
+                                    resistance[aro].extend(resist[aro])
+                        # resistance[aro].extend([x for x in resist[aro] if x not in resistance[aro]])
+
+                outputdict[genome]["genes"].append(tuple([gene] + plusdict[genome][gene]))
                 if sens is not None:
                     outputdict[genome]["sensitivity"] = dictbuild(outputdict[genome]["sensitivity"]).add(sens)
         outputdict[genome]["genes"].sort(key=lambda tup: tup[0])
-        outputdict[genome]["resist"].sort()
+        # outputdict[genome]["resist"]
         outputdict[genome]["sensitivity"].sort()
     json.dump(outputdict,
               open("%s/ARMI_CARD_results_%s.json" % (outputs, time.strftime("%Y.%m.%d.%H.%M.%S")), 'w'),
