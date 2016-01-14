@@ -132,8 +132,6 @@ class ARMISeekr(object):
         # self.yeah()
         stdout, stderr = blastn()
         if stdout != '':
-            with open(fasta+'.txt', 'w') as fi:
-                fi.write(stdout)
             return [[list(chunkstring(aln[0][4:], 7)), [abs(float(aln[1]) / float(aln[2])), aln[3]]]
                     for aln in [hsp.split('\t')
                     for hsp in stdout.rstrip().split("\n")]
