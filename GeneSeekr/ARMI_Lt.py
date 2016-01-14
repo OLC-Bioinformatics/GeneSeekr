@@ -151,8 +151,9 @@ class ARMISeekr(object):
                     sgenes = sgenes if isinstance(sgenes, list) else [sgenes]
                     for gene in sgenes:
                         genelist.add(gene)  # create set of all genes in analysis
-                        plus[fasta][gene].append(values)
-                        plus[fasta][gene].sort()
+                        if values not in plus[fasta][gene]:
+                            plus[fasta][gene].append(values)
+                            plus[fasta][gene].sort()
             return plus, genelist
         except KeyboardInterrupt:
             raise KeyboardInterruptError()
@@ -166,14 +167,6 @@ class ARMISeekr(object):
         for genes in self.db:
             try:
                 mapblast = p.map(self._key, [(genome, genes) for genome in self.query])
-                # for fastaline in mapblast:
-                #     if fastaline is not None:  # if the returned list contains [genome, gene, value]
-                #         for fasta, sgenes, v in fastaline:  # unpack
-                #             for gene in sgenes:
-                #                 if gene not in self.genelist:
-                #                     self.genelist.extend(gene)  # create list of all genes in analysis
-                #                 self.plus[fasta][gene].append(v)
-                #                 self.plus[fasta][gene].sort()
                 for plus, genelist in mapblast:
                     self.genelist = set(self.genelist | genelist)
                     self.plus.update(plus)
@@ -182,11 +175,6 @@ class ARMISeekr(object):
                 p.terminate()
                 print '[{0:s}] Pool is terminated'.format(time.strftime("%H:%M:%S"))
                 sys.exit(127)
-            # except Exception, e:
-            #     print "[{0:s}] Got exception: {1!r:s}, terminating the pool".format(time.strftime("%H:%M:%S"), e)
-            #     p.terminate()
-            #     print "[{0:s}] Pool is terminated".format(time.strftime("%H:%M:%S"))
-            #     sys.exit(127)
 
         print "[{}] Now compiling BLAST database results".format(time.strftime("%H:%M:%S"))
         end = time.time() - start
