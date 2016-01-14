@@ -126,7 +126,7 @@ class ARMISeekr(object):
     def _blast(self, (fasta, db)):
         blastn = NcbiblastnCommandline(query=fasta,
                                        db=db,
-                                       evalue=10e-4,
+                                       evalue=1e-4,
                                        outfmt="'6 sseqid nident slen qacc'",
                                        perc_identity=self.cutoff)
         # self.yeah()
@@ -172,6 +172,15 @@ class ARMISeekr(object):
                 print "[{0:s}] Got ^C while pool mapping, terminating the pool".format(time.strftime("%H:%M:%S"))
                 p.terminate()
                 print '[{0:s}] Pool is terminated'.format(time.strftime("%H:%M:%S"))
+                sys.exit(127)
+            except Exception, e:
+                import traceback
+                print "[{0:s}] Got exception: {1!r:s}, terminating the pool".format(time.strftime("%H:%M:%S"), e)
+                print '-'*60
+                traceback.print_exc(file=sys.stdout)
+                print '-'*60
+                p.terminate()
+                print "[{0:s}] Pool is terminated".format(time.strftime("%H:%M:%S"))
                 sys.exit(127)
 
         print "[{}] Now compiling BLAST database results".format(time.strftime("%H:%M:%S"))
