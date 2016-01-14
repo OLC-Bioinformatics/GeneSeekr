@@ -132,7 +132,7 @@ class ARMISeekr(object):
         # self.yeah()
         stdout, stderr = blastn()
         if stdout != '':
-            return [[list(chunkstring(aln[0][4:], 7)), [abs(float(aln[1]) / float(aln[2])), aln[3]]]
+            return [[list(chunkstring(aln[0][4:], 7)), [abs(float(aln[1]) / float(aln[2])*100), aln[3]]]
                     for aln in [hsp.split('\t')
                     for hsp in stdout.rstrip().split("\n")]
                     if abs(float(aln[1]) / float(aln[2])) >= self.cutoff/100.0]
