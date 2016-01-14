@@ -23,7 +23,7 @@ class Card():
         self.antidict = antidict
         self.plusdict = plusdict
 
-    def resist(self, genome=None):  # Begin resist function and import initialized self
+    def resist(self, genome=None, gene=None):  # Begin resist function and import initialized self
         resistlist = []  # Initialize dict
         genedict = self.antidict[self.index]
         if "resist" in genedict:  # If the key "resist" in gene
@@ -39,10 +39,12 @@ class Card():
                     resistlist.extend(Card(self.antidict, complex, self.plusdict).resist(genome))
                     # recurse through the same class if complexes are satisfied extend the list
             else:  # if no complex then just return the list
-                resistlist.extend([dict((resist, [self.index]) for resist in genedict['resist'])])
+                index = {self.index: gene} if gene else [self.index]
+                resistlist.extend([dict((resist, index) for resist in genedict['resist'])])
         if "isa" in genedict:  # Recursion for parent antibiotic traits
             for depend in genedict["isa"]:
-                for amr in Card(self.antidict, depend).resist(genome):  # Call self to recurse through the same class
+                index = {self.index: gene} if gene else [self.index]
+                for amr in Card(self.antidict, depend).resist(genome, index):  # Call self to recurse through the same class
                     # if amr not in resistlist:
                     resistlist.append(amr)
                 # resistlist.extend(self.resist(genome))  # Call self to recurse through the same class
@@ -78,8 +80,28 @@ class dictbuild():
         # self.key = sorted(self.key, key=lambda s: s.lower())
         return self.key
 
+def recur(current, existing):
+    for item in current:
+        if item in existing:
+            citem, eitem = current[item], existing[item]
+            if type(citem) is list:
+                if type(eitem) is list and citem[0] not in eitem:
+                    existing[item] += citem
+            else:
+               existing[item] = recur(citem, eitem)
+            return existing
+        elif type(existing) is unicode:
+            return existing
+        elif type(existing) is list:
+            return existing
+        else:
+            existing[item] = current[item]
+    else:
+        return existing
+
 
 def decipher(plusdict, antidict, outputs):
+    from copy import deepcopy
     outputdict = {}
     for genome in sorted(plusdict):  # iterate through plus dict
         outputdict[genome] = {"resist": defaultdict(list), "sensitivity": [], "genes": []}
@@ -92,9 +114,15 @@ def decipher(plusdict, antidict, outputs):
                 for resist in analysis.resist(genome):  # check resistances
                     if resist is not None:
                         for aro in resist:
+                            # print genome, aro, resistance[aro]
                             if resist[aro] not in resistance[aro]:
                                 if type(resist[aro]) is dict:
-                                    resistance[aro].append(resist[aro])
+                                    new = [recur(resist[aro], existing) for existing in deepcopy(resistance[aro])]
+                                    if new == resistance[aro]:
+                                        resistance[aro].append(resist[aro])
+                                    elif new != []:
+                                        'test'
+                                        resistance[aro] = new
                                 elif resist[aro][0] not in resistance[aro]:
                                     resistance[aro].extend(resist[aro])
                                 resistance[aro].sort()
