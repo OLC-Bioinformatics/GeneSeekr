@@ -53,7 +53,7 @@ class Card():
             return self.antidict[self.index]["resist"]
 
     def sens(self):
-         if "sensitivity" in self.antidict[self.index]:
+        if "sensitivity" in self.antidict[self.index]:
             return self.antidict[self.index]["sensitivity"]
 
     def function(self):
@@ -95,9 +95,9 @@ def decipher(plusdict, antidict, outputs):
                             if resist[aro] not in resistance[aro]:
                                 if type(resist[aro]) is dict:
                                     resistance[aro].append(resist[aro])
-                                else:
+                                elif resist[aro][0] not in resistance[aro]:
                                     resistance[aro].extend(resist[aro])
-                        # resistance[aro].extend([x for x in resist[aro] if x not in resistance[aro]])
+                                resistance[aro].sort()
 
                 outputdict[genome]["genes"].append(tuple([gene] + plusdict[genome][gene]))
                 if sens is not None:
@@ -135,7 +135,7 @@ def decipher(plusdict, antidict, outputs):
         genomecount = 0
         for drug in antilist:
             if drug in outputdict[genome]["resist"]:
-                antistr += ",+"
+                antistr += ",%i" % len(outputdict[genome]["resist"][drug])
                 drugcounter[drug] += 1
                 genomecount += 1
             else:
