@@ -80,23 +80,22 @@ class dictbuild():
         # self.key = sorted(self.key, key=lambda s: s.lower())
         return self.key
 
+
 def recur(current, existing):
     for item in current:
         if item in existing:
             citem, eitem = current[item], existing[item]
             if type(citem) is list:
                 if type(eitem) is list and citem[0] not in eitem:
-                    existing[item] += citem
+                    existing[item].extend(citem)
+                elif citem[0] not in eitem:
+                    existing[item][item] = citem
             else:
-               existing[item] = recur(citem, eitem)
-            return existing
-        elif type(existing) is unicode:
-            return existing
-        elif type(existing) is list:
-            return existing
+                existing[item] = recur(citem, eitem)
+        elif type(existing) in (unicode, list):
+            pass
         else:
             existing[item] = current[item]
-    else:
         return existing
 
 
@@ -105,6 +104,7 @@ def decipher(plusdict, antidict, outputs):
     outputdict = {}
     for genome in sorted(plusdict):  # iterate through plus dict
         outputdict[genome] = {"resist": defaultdict(list), "sensitivity": [], "genes": []}
+        arodi = defaultdict(list)
         resistance = outputdict[genome]["resist"]
         for gene in plusdict[genome]:
             analysis = Card(antidict, gene, plusdict[genome])
@@ -114,15 +114,17 @@ def decipher(plusdict, antidict, outputs):
                 for resist in analysis.resist(genome):  # check resistances
                     if resist is not None:
                         for aro in resist:
-                            # print genome, aro, resistance[aro]
-                            if resist[aro] not in resistance[aro]:
+                            if resist[aro] not in arodi[aro]:
+                                arodi[aro].append(resist[aro])
                                 if type(resist[aro]) is dict:
                                     new = [recur(resist[aro], existing) for existing in deepcopy(resistance[aro])]
                                     if new == resistance[aro]:
                                         resistance[aro].append(resist[aro])
                                     elif new != []:
-                                        'test'
-                                        resistance[aro] = new
+                                        resistance[aro] = []
+                                        for x in new:
+                                            if x not in resistance[aro]:
+                                                resistance[aro].append(x)
                                 elif resist[aro][0] not in resistance[aro]:
                                     resistance[aro].extend(resist[aro])
                                 resistance[aro].sort()
