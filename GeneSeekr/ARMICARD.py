@@ -87,13 +87,12 @@ def recur(current, existing):
             citem, eitem = current[item], existing[item]
             if type(citem) is list:
                 if type(eitem) is list and citem[0] not in eitem:
-                    print existing, eitem, citem
                     existing[item].extend(citem)
                 elif citem[0] not in eitem:
                     existing[item][item] = citem
             else:
                 existing[item] = recur(citem, eitem)
-        elif type(existing) in (unicode, list):
+        elif type(existing) in (str, unicode, list):
             pass
         else:
             existing[item] = current[item]
