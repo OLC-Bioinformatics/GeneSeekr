@@ -2,11 +2,12 @@ import json
 import time
 import os
 from collections import defaultdict
+
 __author__ = 'mike knowles'
 
 
-class Card():
-    '''
+class Card:
+    """
     CARD requires a gene # as an input class has three functions:
     Card(antidict, gene)
     resist will :return and list of antibiotics for a revelant gene
@@ -17,7 +18,8 @@ class Card():
         .anti()
     sens will :return a list of sensitivities for a given gene
         .sens()
-    '''
+    """
+
     def __init__(self, antidict, index, plusdict=None):  # Initialize class and inherit self
         self.index = index  # Defines a gene number that can be passed to functions within the class
         self.antidict = antidict
@@ -35,8 +37,8 @@ class Card():
             elif "complex" in genedict and genome is not None:
                 '''If the key complex in gene defines their are depenedenies'''
                 # count = 0  # for each resistance set count at zero
-                for complex in genedict["complex"]:  # Allow for multiple dependencies
-                    resistlist.extend(Card(self.antidict, complex, self.plusdict).resist(genome))
+                for comp in genedict["complex"]:  # Allow for multiple dependencies
+                    resistlist.extend(Card(self.antidict, comp, self.plusdict).resist(genome))
                     # recurse through the same class if complexes are satisfied extend the list
             else:  # if no complex then just return the list
                 index = {self.index: gene} if gene else [self.index]
@@ -44,10 +46,11 @@ class Card():
         if "isa" in genedict:  # Recursion for parent antibiotic traits
             for depend in genedict["isa"]:
                 index = {self.index: gene} if gene else [self.index]
-                for amr in Card(self.antidict, depend).resist(genome, index):  # Call self to recurse through the same class
+                for amr in Card(self.antidict, depend).resist(genome, index):
+                    # Call self to recurse through the same class
                     # if amr not in resistlist:
                     resistlist.append(amr)
-                # resistlist.extend(self.resist(genome))  # Call self to recurse through the same class
+                    # resistlist.extend(self.resist(genome))  # Call self to recurse through the same class
         return resistlist  # return the extended list
 
     def anti(self):
@@ -63,10 +66,9 @@ class Card():
             return self.antidict[self.index]["function"]
 
 
-class dictbuild():
-    '''
-    Simple class to build a list or dictionary without repeats
-    '''
+class DictBuild:
+    """Simple class to build a list or dictionary without repeats"""
+
     def __init__(self, index):
         self.key = index
 
@@ -120,7 +122,7 @@ def decipher(plusdict, antidict, outputs):
                                     new = [recur(resist[aro], existing) for existing in deepcopy(resistance[aro])]
                                     if new == resistance[aro]:
                                         resistance[aro].append(resist[aro])
-                                    elif new != []:
+                                    elif new:
                                         resistance[aro] = []
                                         for x in new:
                                             if x not in resistance[aro]:
@@ -131,9 +133,8 @@ def decipher(plusdict, antidict, outputs):
 
                 outputdict[genome]["genes"].append(tuple([gene] + plusdict[genome][gene]))
                 if sens is not None:
-                    outputdict[genome]["sensitivity"] = dictbuild(outputdict[genome]["sensitivity"]).add(sens)
+                    outputdict[genome]["sensitivity"] = DictBuild(outputdict[genome]["sensitivity"]).add(sens)
         outputdict[genome]["genes"].sort(key=lambda tup: tup[0])
-        # outputdict[genome]["resist"]
         outputdict[genome]["sensitivity"].sort()
     json.dump(outputdict,
               open("%s/ARMI_CARD_results_%s.json" % (outputs, time.strftime("%Y.%m.%d.%H.%M.%S")), 'w'),
@@ -141,7 +142,6 @@ def decipher(plusdict, antidict, outputs):
               indent=4,
               separators=(',', ': '))
     antilist = []
-
 
     for gene in antidict:  # build hearder list
         resistances = Card(antidict, gene).anti()
@@ -178,5 +178,3 @@ def decipher(plusdict, antidict, outputs):
 
     with open("%s/ARMI_CARD_results_%s.csv" % (outputs, time.strftime("%Y.%m.%d.%H.%M.%S")), 'w') as f:
         f.write(antihead)
-
-
