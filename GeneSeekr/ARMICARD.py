@@ -28,25 +28,28 @@ class Card:
     def resist(self, genome=None, gene=None):  # Begin resist function and import initialized self
         resistlist = []  # Initialize dict
         genedict = self.antidict[self.index]
-        if "resist" in genedict:  # If the key "resist" in gene
-            if "member" in genedict and genome is not None:  # check if dependencies are satisfied
-                mdict = {self.index: [memb for memb in genedict['member'] if memb in self.plusdict]}
-                if len(mdict[self.index]) == len(genedict['member']):  # check if the list of requirements is complete
-                    mdict[self.index].sort()
-                    resistlist.extend([dict((resist, mdict) for resist in genedict['resist'])])  # create list of dicts
-            elif "complex" in genedict and genome is not None:
+        deps = True
+        if "member" in genedict and genome is not None:  # check if dependencies are satisfied
+            deps = False
+            index = {self.index: [memb for memb in genedict['member'] if memb in self.plusdict and memb != "3000237"]}
+            if len(index[self.index]) == len(genedict['member']):  # check if the list of requirements is complete
+                deps = True
+                index[self.index].sort()
+                # resistlist.extend([dict((resist, mdict) for resist in genedict['resist'])])  # create list of dicts
+        else:
+            index = {self.index: gene} if gene else [self.index]
+        if "resist" in genedict and deps:  # If the key "resist" in gene
+            if "complex" in genedict and genome is not None:
                 '''If the key complex in gene defines their are depenedenies'''
                 # count = 0  # for each resistance set count at zero
                 for comp in genedict["complex"]:  # Allow for multiple dependencies
                     resistlist.extend(Card(self.antidict, comp, self.plusdict).resist(genome))
                     # recurse through the same class if complexes are satisfied extend the list
             else:  # if no complex then just return the list
-                index = {self.index: gene} if gene else [self.index]
                 resistlist.extend([dict((resist, index) for resist in genedict['resist'])])
-        if "isa" in genedict:  # Recursion for parent antibiotic traits
+        if "isa" in genedict and deps:  # Recursion for parent antibiotic traits
             for depend in genedict["isa"]:
-                index = {self.index: gene} if gene else [self.index]
-                for amr in Card(self.antidict, depend).resist(genome, index):
+                for amr in Card(self.antidict, depend, self.plusdict).resist(genome, index):
                     # Call self to recurse through the same class
                     # if amr not in resistlist:
                     resistlist.append(amr)
@@ -83,22 +86,28 @@ class DictBuild:
         return self.key
 
 
-def recur(current, existing):
+def recur(current, existing, index, dup=True):
     for item in current:
         if item in existing:
             citem, eitem = current[item], existing[item]
             if type(citem) is list:
                 if type(eitem) is list and citem[0] not in eitem:
-                    existing[item].extend(citem)
+                    if len(citem) > 1:
+                        clist = current
+                    else:
+                        clist = citem[0]
+                    existing[item].append(clist)
                 elif citem[0] not in eitem:
                     existing[item][item] = citem
+                elif citem[0] in eitem:
+                    return False, existing
+            elif type(eitem) is list:
+                eitem.append(citem)
             else:
-                existing[item] = recur(citem, eitem)
-        elif type(existing) in (str, unicode, list):
-            pass
-        else:
+                dup, existing[item] = recur(citem, eitem, index+1, dup)
+        elif not type(existing) in (str, unicode, list) and index != 0:
             existing[item] = current[item]
-        return existing
+    return dup, existing
 
 
 def decipher(plusdict, antidict, outputs):
@@ -111,7 +120,6 @@ def decipher(plusdict, antidict, outputs):
         for gene in plusdict[genome]:
             analysis = Card(antidict, gene, plusdict[genome])
             if plusdict[genome][gene]:
-
                 sens = analysis.sens()  # check sensitivities
                 for resist in analysis.resist(genome):  # check resistances
                     if resist is not None:
@@ -119,14 +127,16 @@ def decipher(plusdict, antidict, outputs):
                             if resist[aro] not in arodi[aro]:
                                 arodi[aro].append(resist[aro])
                                 if type(resist[aro]) is dict:
-                                    new = [recur(resist[aro], existing) for existing in deepcopy(resistance[aro])]
-                                    if new == resistance[aro]:
+                                    cpa = deepcopy(resistance[aro])
+                                    new, dup = [], True
+                                    for existing in cpa:
+                                        up, newitem = recur(resist[aro], existing, 0)
+                                        new.append(newitem)
+                                        dup = up if not up else dup
+                                    if new == resistance[aro] and dup:
                                         resistance[aro].append(resist[aro])
-                                    elif new:
-                                        resistance[aro] = []
-                                        for x in new:
-                                            if x not in resistance[aro]:
-                                                resistance[aro].append(x)
+                                    elif new and dup:
+                                        resistance[aro] = new
                                 elif resist[aro][0] not in resistance[aro]:
                                     resistance[aro].extend(resist[aro])
                                 resistance[aro].sort()
