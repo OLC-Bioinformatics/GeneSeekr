@@ -128,7 +128,7 @@ class ARMISeekr(object):
                                        db=db,
                                        evalue=1e-4,
                                        outfmt="'6 sseqid nident slen qacc'",
-                                       perc_identity=self.cutoff)
+                                       perc_identity=98)#self.cutoff)
         # self.yeah()
         stdout, stderr = blastn()
         if stdout != '':
