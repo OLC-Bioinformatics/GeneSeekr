@@ -29,15 +29,19 @@ class Card:
         resistlist = []  # Initialize dict
         genedict = self.antidict[self.index]
         deps = True
+        keystr = self.index.encode('utf8') + ", " + genedict['name'].encode('utf8')
         if "member" in genedict and genome is not None:  # check if dependencies are satisfied
             deps = False
-            index = {self.index: [memb for memb in genedict['member'] if memb in self.plusdict and memb != "3000237"]}
-            if len(index[self.index]) == len(genedict['member']):  # check if the list of requirements is complete
+            membstr = lambda x: x.encode('utf8') + ", " + self.antidict[x]['name'].encode('utf8')
+            index = {keystr: [membstr(memb) for memb in genedict['member']
+                              if memb in self.plusdict and memb != "3000237"]}
+            if len(index[keystr]) == len(genedict['member']):
+                # check if the list of requirements is complete
                 deps = True
-                index[self.index].sort()
+                index[keystr].sort()
                 # resistlist.extend([dict((resist, mdict) for resist in genedict['resist'])])  # create list of dicts
         else:
-            index = {self.index: gene} if gene else [self.index]
+            index = {keystr: gene} if gene else [keystr]
         if "resist" in genedict and deps:  # If the key "resist" in gene
             if "complex" in genedict and genome is not None:
                 '''If the key complex in gene defines their are depenedenies'''
@@ -118,12 +122,15 @@ def decipher(plusdict, antidict, outputs):
         arodi = defaultdict(list)
         resistance = outputdict[genome]["resist"]
         for gene in plusdict[genome]:
+            if 'name' in antidict[gene]:
+                plusdict[genome][gene].insert(0, antidict[gene]['name'])
             analysis = Card(antidict, gene, plusdict[genome])
             if plusdict[genome][gene]:
                 sens = analysis.sens()  # check sensitivities
                 for resist in analysis.resist(genome):  # check resistances
                     if resist is not None:
                         for aro in resist:
+                            test = False
                             if resist[aro] not in arodi[aro]:
                                 arodi[aro].append(resist[aro])
                                 if type(resist[aro]) is dict:
