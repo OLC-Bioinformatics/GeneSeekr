@@ -200,7 +200,11 @@ class ARMISeekr(object):
         for genomerow in sorted(self.plus):
             row += '\n{}'.format(os.path.split(os.path.splitext(genomerow)[0])[1].replace('_filteredAssembled', ""))
             for genename in self.genelist:
-                row += ',' + (lambda x, y: ' '.join(map(str, x[y][1])) if y in x else 'N')(self.plus[genomerow], genename)
+                rl = [result[1] for result in self.plus[genomerow][genename] if genename in self.plus[genomerow]]
+                rl = ['+'] if '+' in rl else rl
+                rl = ['N'] if not rl else rl
+                row += ',' + ' '.join(rl)
+                # row += ',' + (lambda x, y: ' '.join(map(str, x)) if y in x else 'N')(self.plus[genomerow], genename)
                 # Add the allele numbers to the row for the appropriate gene, otherwise return N
         with open("%s/%s_results_%s.csv" % (out, name, time.strftime("%Y.%m.%d.%H.%M.%S")), 'wb') as csvfile:
             csvfile.write(row)

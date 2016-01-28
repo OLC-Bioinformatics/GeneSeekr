@@ -16,8 +16,9 @@ class Jackson(ARMISeekr):
                                        num_alignments=10000)
         stdout, stderr = blastn()
         if stdout != '':
-            return [[[(lambda x: x[4:] if "ARO:" in x else x)(sseqid)], [sseqid,
-                     [(lambda x: "{:.2f}%".format(x*100) if x < 1.0 else '+')(abs(float(nident) / float(slen)))], qacc]]
+            return [[[(lambda x: x[4:] if "ARO:" in x else x)(sseqid)],
+                     [(lambda x: "{:.2f}%".format(x*100) if x < 1.0 else '+')(abs(float(nident) / float(slen))),
+                      qacc]]
                     for sseqid, nident, slen, qacc, in [hsp.split('\t')
                     for hsp in stdout.rstrip().split("\n")]
                     if abs(float(nident) / float(slen)) >= self.cutoff/100.0]
