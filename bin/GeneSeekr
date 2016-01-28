@@ -16,7 +16,7 @@ def helper(genes, targets, out, cuttoff, threads):
     targets = ispath(targets)
     result = Jackson(genes, targets, threads)
     result.mpblast(cuttoff)
-    json.dump(result.plus, open("%s/GeneSeekr-gene_results_%s.json" % (out, time.strftime("%Y.%m.%d.%H.%M.%S")), 'w'),
+    json.dump(result.plus, open("%s/GeneSeekr_gene_results_%s.json" % (out, time.strftime("%Y.%m.%d.%H.%M.%S")), 'w'),
               sort_keys=True, indent=4, separators=(',', ': '))
     result.csvwriter(out, 'GeneSeekr')
 

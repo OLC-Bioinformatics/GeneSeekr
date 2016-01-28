@@ -16,7 +16,7 @@ def helper(genes, targets, out, cutoff, threads):
     targets = ispath(targets)
     result = GeneSeekr(genes, targets, threads)
     result.mpblast(cutoff)
-    dump(result.plus, open("%s/MLST-gene_results_%s.json" % (out, time.strftime("%Y.%m.%d.%H.%M.%S")), 'w'),
+    dump(result.plus, open("%s/MLST_gene_results_%s.json" % (out, time.strftime("%Y.%m.%d.%H.%M.%S")), 'w'),
          sort_keys=True, indent=4, separators=(',', ': '))
     result.csvwriter(out, 'rMLST')
 

@@ -19,7 +19,7 @@ def helper(genes, targets, out, cuttoff, aro, threads):
     targets = ispath(targets)
     result = ARMI_Lt.ARMISeekr(genes, targets, threads)
     result.mpblast(cuttoff)
-    json.dump(result.plus, open("%s/ARMI-gene_results_%s.json" % (out, time.strftime("%Y.%m.%d.%H.%M.%S")), 'w'),
+    json.dump(result.plus, open("%s/ARMI_gene_results_%s.json" % (out, time.strftime("%Y.%m.%d.%H.%M.%S")), 'w'),
               sort_keys=True, indent=4, separators=(',', ': '))
     decipher(result.plus, pickle.load(open(aro)), out)
 

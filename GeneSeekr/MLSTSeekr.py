@@ -12,16 +12,17 @@ class GeneSeekr(ARMISeekr):
         blastn = NcbiblastnCommandline(query=fasta,
                                        db=db,
                                        evalue=10,
-                                       outfmt="'6 sseqid nident slen'",
+                                       outfmt="'6 sseqid nident slen qacc'",
                                        perc_identity=self.cutoff,
                                        num_descriptions=10000,
                                        num_alignments=10000)
         stdout, stderr = blastn()
         if stdout != '':
-            return [[fasta, aln[0].split('_')[0], int(aln[0].split('_')[1])]
-                    for aln in [hsp.split('\t')
+            return [[[gene], [int(allele), qacc]]
+                    for sseqid, nident, slen, qacc in [hsp.split('\t')
                     for hsp in stdout.rstrip().split("\n")]
-                    if abs(float(aln[1]) / float(aln[2])) >= self.cutoff/100.0]
+                    for gene, allele in sseqid.split('_')
+                    if abs(float(nident) / float(slen)) >= self.cutoff/100.0]
 
 
 parent = ArgumentParser(add_help=False)
