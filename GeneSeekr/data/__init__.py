@@ -41,4 +41,4 @@ def makedb(path):
     print 'installing card database'
 if __name__ == '__main__':
     import os
-    makedb(os.path.join(os.path.split(__file__)[0], 'ARMI-genes.dat'))
+    makedb(os.path.join(os.path.split(__file__)[0], 'genes.dat'))
