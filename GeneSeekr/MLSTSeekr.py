@@ -18,11 +18,13 @@ class GeneSeekr(ARMISeekr):
                                        num_alignments=10000)
         stdout, stderr = blastn()
         if stdout != '':
-            return [[[gene], [int(allele), qacc]]
+            test =  [[[gene], [int(allele), qacc]]
                     for sseqid, nident, slen, qacc in [hsp.split('\t')
                     for hsp in stdout.rstrip().split("\n")]
                     for gene, allele in sseqid.split('_')
                     if abs(float(nident) / float(slen)) >= self.cutoff/100.0]
+            print test
+            return test
 
 
 parent = ArgumentParser(add_help=False)
