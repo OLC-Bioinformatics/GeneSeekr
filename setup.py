@@ -21,7 +21,7 @@ setup(
     name='pythonGeneSeekr',
     version='0.5dev2',
     packages=['GeneSeekr'],
-    package_data={'': ['GeneSeekr/data/*.dat','GeneSeekr/data/genes.dat']},
+    package_data={'': ['GeneSeekr/data/aro.dat','GeneSeekr/data/genes.dat', 'GeneSeekr/data/ardb.dat']},
     include_package_data=True,
     url='https://github.com/OLC-Bioinformatics/pythonGeneSeekr',
     license='MIT',
