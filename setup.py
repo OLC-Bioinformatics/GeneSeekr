@@ -11,7 +11,7 @@ import os
 class build_card(install):
     description = 'download CARD fasta and modify for ARMI'
     def run(self):
-        db = os.path.abspath(os.path.join(os.path.split(__file__)[0], 'Geneseekr', 'data', 'ARMI-genes.dat'))
+        db = os.path.join(os.path.split(__file__)[0], 'Geneseekr', 'data', 'ARMI-genes.dat')
         if not os.path.isfile(db):
             makedb(db)
         install.run(self)
