@@ -17,13 +17,12 @@ class Jackson(ARMISeekr):
         stdout, stderr = blastn()
         if stdout != '':
             return [[[(lambda x: x[4:] if "ARO:" in x else x)(sseqid)], [sseqid,
-                     (lambda x: "{:.2f}%".format(x*100) if x < 1.0 else '+')(abs(float(nident) / float(slen))), qacc]]
+                     [(lambda x: "{:.2f}%".format(x*100) if x < 1.0 else '+')(abs(float(nident) / float(slen)))], qacc]]
                     for sseqid, nident, slen, qacc, in [hsp.split('\t')
                     for hsp in stdout.rstrip().split("\n")]
                     if abs(float(nident) / float(slen)) >= self.cutoff/100.0]
 
 def resfinder(ardb, plus, out):
-    from collections import defaultdict
     import os
     import time
     import json
