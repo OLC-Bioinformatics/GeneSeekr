@@ -168,6 +168,7 @@ class ARMISeekr(object):
                 for plus, genelist in mapblast:
                     self.genelist = set(self.genelist | genelist)
                     self.plus.update(plus)
+                self.genelist = sorted(self.genelist)
             except KeyboardInterrupt:
                 print "[{0:s}] Got ^C while pool mapping, terminating the pool".format(time.strftime("%H:%M:%S"))
                 p.terminate()
@@ -194,7 +195,6 @@ class ARMISeekr(object):
         assert isinstance(name, str), u'Output name is not a string {0!r:s}'.format(name)
         assert os.path.isdir(out), u'Output location is not a valid directory {0!r:s}'.format(out)
         print "[{}] Writing CSV and JSON to output directory".format(time.strftime("%H:%M:%S"))
-        self.genelist.sort()
         rowcount, row = 0, 'Strain,'
         row += ', '.join(self.genelist)
         for genomerow in sorted(self.plus):
