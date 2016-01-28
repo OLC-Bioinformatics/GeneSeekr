@@ -9,8 +9,9 @@ import os
 
 class Build(build_module.build):
     def run(self):
-        if not os.path.join(os.getcwd(), 'Geneseekr', 'data', 'ARMI-genes.dat'):
-            makedb(os.path.join(os.getcwd(), 'Geneseekr', 'data', 'ARMI-genes.dat'))
+        db = os.path.join(os.path.split(__file__)[0], 'Geneseekr', 'data', 'ARMI-genes.dat')
+        if not db:
+            makedb(db)
         build_module.build.run(self)
 
 setup(
