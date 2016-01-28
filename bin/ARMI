@@ -35,6 +35,8 @@ if __name__ == '__main__':
                         , default=resource_filename(ARMI_Lt.__name__, 'data/aro.dat')
                         , help='JSON file location')
     parser._option_string_actions['-m'].required = False
+    trie = resource_filename(ARMI_Lt.__name__, 'data/ardb.dat')
+    print trie
     test = resource_filename(ARMI_Lt.__name__, 'data/genes.dat')
     print test
     parser.set_defaults(marker=test, cutoff=85)
