@@ -20,6 +20,7 @@ def dlunzip(url):
     return decompressedFile
 
 def makedb(path):
+    print os.getcwd()
     genelist = defaultdict(list)
     for line in dlunzip('http://arpcard.mcmaster.ca/blast/db/AROtags.txt.gz'):
         acc, name, aro = line.rstrip().split("\t")
