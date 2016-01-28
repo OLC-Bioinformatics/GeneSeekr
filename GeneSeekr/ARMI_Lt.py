@@ -128,7 +128,7 @@ class ARMISeekr(object):
                                        db=db,
                                        evalue=1e-4,
                                        outfmt="'6 sseqid nident slen qacc'",
-                                       perc_identity=98)#self.cutoff)
+                                       perc_identity=self.cutoff)
         # self.yeah()
         stdout, stderr = blastn()
         if stdout != '':
@@ -196,11 +196,11 @@ class ARMISeekr(object):
         assert os.path.isdir(out), u'Output location is not a valid directory {0!r:s}'.format(out)
         print "[{}] Writing CSV and JSON to output directory".format(time.strftime("%H:%M:%S"))
         rowcount, row = 0, 'Strain,'
-        row += ', '.join(self.genelist)
+        row += ', '.join(map((lambda x: x[4:] if "ARO:" in x else x), self.genelist))
         for genomerow in sorted(self.plus):
             row += '\n{}'.format(os.path.split(os.path.splitext(genomerow)[0])[1].replace('_filteredAssembled', ""))
             for genename in self.genelist:
-                row += ',' + (lambda x, y: ' '.join(map(str, x[y])) if y in x else 'N')(self.plus[genomerow], genename)
+                row += ',' + (lambda x, y: ' '.join(map(str, x[y][1])) if y in x else 'N')(self.plus[genomerow], genename)
                 # Add the allele numbers to the row for the appropriate gene, otherwise return N
         with open("%s/%s_results_%s.csv" % (out, name, time.strftime("%Y.%m.%d.%H.%M.%S")), 'wb') as csvfile:
             csvfile.write(row)

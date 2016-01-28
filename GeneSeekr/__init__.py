@@ -10,17 +10,17 @@ class Jackson(ARMISeekr):
         blastn = NcbiblastnCommandline(query=fasta,
                                        db=db,
                                        evalue=10,
-                                       outfmt="'6 sseqid nident slen'",
+                                       outfmt="'6 sseqid nident slen qacc'",
                                        perc_identity=self.cutoff,
                                        num_descriptions=10000,
                                        num_alignments=10000)
         stdout, stderr = blastn()
         if stdout != '':
-            return [[[fasta], [aln[0],
-                     (lambda x: "{:.2f}%".format(x*100) if x < 1.0 else '+')(abs(float(aln[1]) / float(aln[2])))]]
-                    for aln in [hsp.split('\t')
+            return [[[(lambda x: x[4:] if "ARO:" in x else x)(sseqid)], [sseqid,
+                     (lambda x: "{:.2f}%".format(x*100) if x < 1.0 else '+')(abs(float(nident) / float(slen))), qacc]]
+                    for sseqid, nident, slen, qacc, in [hsp.split('\t')
                     for hsp in stdout.rstrip().split("\n")]
-                    if abs(float(aln[1]) / float(aln[2])) >= self.cutoff/100.0]
+                    if abs(float(nident) / float(slen)) >= self.cutoff/100.0]
 
 def resfinder(ardb, plus, out):
     from collections import defaultdict
