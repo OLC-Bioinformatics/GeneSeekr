@@ -34,7 +34,8 @@ if __name__ == '__main__':
     parser.add_argument('-a', '--anti', type=str
                         , default=resource_filename(ARMI_Lt.__name__, 'data/aro.dat')
                         , help='JSON file location')
+    parser._option_string_actions['-m'].required = False
+    parser.set_defaults(marker=resource_filename(ARMI_Lt.__name__, 'data/ARMI-genes.dat'))
     parser.set_defaults(cutoff=85)
-    args = vars(parser.parse_args())
-
-    helper(args['marker'], args['input'], args['output'], args['cutoff'], args['anti'], args['threads'])
+    args = parser.parse_args()
+    helper(args.marker, args.input, args.output, args.cutoff, args.anti, args.threads)

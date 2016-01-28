@@ -27,5 +27,5 @@ if __name__ == '__main__':
     parser = ArgumentParser(description='General quick BLASTn formatter',
                             parents=[parent])
     parser.set_defaults(cutoff=70)
-    args = vars(parser.parse_args())
-    helper(args['marker'], args['input'], args['output'], args['cutoff'], args['threads'])
+    args = parser.parse_args()
+    helper(args.marker, args.input, args.output, args.cutoff, args.threads)
