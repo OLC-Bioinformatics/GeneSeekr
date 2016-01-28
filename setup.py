@@ -13,6 +13,7 @@ class build_card(install):
     def run(self):
         db = os.path.join(os.path.split(__file__)[0], 'Geneseekr', 'data', 'ARMI-genes.dat')
         if not os.path.isfile(db):
+            print 'test'
             makedb(db)
         install.run(self)
 
