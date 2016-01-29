@@ -16,11 +16,11 @@ class build_card(install):
             makedb(db)
         install.run(self)
 
-class updatedb(Command):
+class updatedb(build_card):
     description = 'update CARD ontology'
     def run(self):
         updatearo(os.path.join(os.path.split(__file__)[0], 'GeneSeekr', 'data', 'aro.dat'))
-        Command.run(self)
+        build_card.run(self)
 
 
 setup(

@@ -136,7 +136,6 @@ class ARMISeekr(object):
                     for hsp in stdout.rstrip().split("\n")]
                     if abs(float(aln[1]) / float(aln[2])) >= self.cutoff/100.0]
 
-
     def _key(self, data):
         genelist, plus = set(), dict()
         try:

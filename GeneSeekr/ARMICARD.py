@@ -26,7 +26,6 @@ class Card:
         self.plusdict = plusdict
 
     def resist(self, genome=None, gene=None, tolc=None):  # Begin resist function and import initialized self
-        print repr(tolc)
         resistlist = []  # Initialize dict
         genedict = self.antidict[self.index]
         deps = True
