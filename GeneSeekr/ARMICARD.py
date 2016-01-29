@@ -43,13 +43,16 @@ class Card:
             else:
                 index = []
         else:
-            index = {keystr: gene} if gene else [keystr]
+            if gene:
+                index = {keystr: gene} if gene else [keystr]
         if "resist" in genedict and deps:  # If the key "resist" in gene
             if "complex" in genedict and genome is not None:
                 '''If the key complex in gene defines their are depenedenies'''
                 # count = 0  # for each resistance set count at zero
                 for comp in genedict["complex"]:  # Allow for multiple dependencies
-                    resistlist.extend(Card(self.antidict, comp, self.plusdict).resist(genome, tolc=tolc))
+                    inde = Card(self.antidict, comp, self.plusdict).resist(genome, tolc=tolc)
+                    if inde:
+                        resistlist.extend(inde)
                     # recurse through the same class if complexes are satisfied extend the list
             else:  # if no complex then just return the list
                 resistlist.extend([dict((resist, index) for resist in genedict['resist'])])
