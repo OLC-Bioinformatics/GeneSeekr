@@ -36,7 +36,7 @@ if __name__ == '__main__':
     parser.add_argument('-a', '--anti', type=str
                         , default=resource_filename(ARMI_Lt.__name__, 'data/aro.dat')
                         , help='JSON file location')
-    parser.add_argument('--tolc', action='store_true', help='include TolC-related efflux pumps')
+    parser.add_argument('--tolc', action='store_false', help='Include TolC-related efflux pumps')
     parser._option_string_actions['-m'].required = False
     parser.set_defaults(marker=resource_filename(ARMI_Lt.__name__, 'data/genes.dat'), cutoff=85)
     parser.set_defaults()

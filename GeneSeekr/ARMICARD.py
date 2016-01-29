@@ -26,6 +26,7 @@ class Card:
         self.plusdict = plusdict
 
     def resist(self, genome=None, gene=None, tolc=None):  # Begin resist function and import initialized self
+        print repr(tolc)
         resistlist = []  # Initialize dict
         genedict = self.antidict[self.index]
         deps = True
@@ -53,7 +54,7 @@ class Card:
                 resistlist.extend([dict((resist, index) for resist in genedict['resist'])])
         if "isa" in genedict and deps:  # Recursion for parent antibiotic traits
             for depend in genedict["isa"]:
-                for amr in Card(self.antidict, depend, self.plusdict).resist(genome, index, tolc):
+                for amr in Card(self.antidict, depend, self.plusdict).resist(genome, index, tolc=tolc):
                     # Call self to recurse through the same class
                     # if amr not in resistlist:
                     resistlist.append(amr)
