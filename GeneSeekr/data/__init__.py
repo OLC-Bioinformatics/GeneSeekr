@@ -49,7 +49,8 @@ def updatearo(path):
         for line in obo:
             if "id: ARO" == line[:7]:
                 aro = line[8:].rstrip()
-                cardict[aro] = defaultdict(list)
+                if aro not in cardict:
+                    cardict[aro] = defaultdict(list)
             if "name: " == line[:6]:
                 cardict[aro]["name"] = line[6:].rstrip()
             if "is_a: ARO:" in line:
@@ -63,7 +64,6 @@ def updatearo(path):
                 cardict[aro]["complex"].append(line[26:33].rstrip())
                 if line[26:33].rstrip() not in cardict:
                     cardict[line[26:33].rstrip()] = defaultdict(list)
-                cardict[line[26:33].rstrip()]["member"].append(aro)
                 cardict[line[26:33].rstrip()]["member"].sort()
             if "relationship: targeted_by_drug" in line:
                 cardict[aro]["sensitivity"].append(line[45:].rstrip())
