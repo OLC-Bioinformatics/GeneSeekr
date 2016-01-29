@@ -40,6 +40,8 @@ class Card:
                 deps = True
                 index[keystr].sort()
                 # resistlist.extend([dict((resist, mdict) for resist in genedict['resist'])])  # create list of dicts
+            else:
+                index = []
         else:
             index = {keystr: gene} if gene else [keystr]
         if "resist" in genedict and deps:  # If the key "resist" in gene
