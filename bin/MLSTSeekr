@@ -28,6 +28,5 @@ if __name__ == '__main__':
                                         'Use to find markers for any bacterial genome',
                             parents=[parent])
     parser.set_defaults(cutoff=100)
-    parser.op
     args = parser.parse_args()
     helper(args.marker, args.input, args.output, args.cutoff, args.threads)
