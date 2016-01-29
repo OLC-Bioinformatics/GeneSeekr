@@ -43,8 +43,7 @@ class Card:
             else:
                 index = []
         else:
-            if gene:
-                index = {keystr: gene} if gene else [keystr]
+            index = {keystr: gene} if gene else [keystr]
         if "resist" in genedict and deps:  # If the key "resist" in gene
             if "complex" in genedict and genome is not None:
                 '''If the key complex in gene defines their are depenedenies'''
