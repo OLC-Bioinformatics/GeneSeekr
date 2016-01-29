@@ -70,8 +70,6 @@ def updatearo(path):
                 cardict[aro]["sensitivity"].append(line[45:].rstrip())
     with open(path, 'w') as handle:
         pickle.dump(cardict, handle)
-    import json
-    json.dump(cardict, open('/Users/mike/Downloads/arodat.json', 'w'), indent=4, separators=(',', ': '), sort_keys=True)
 
 if __name__ == '__main__':
     import os
