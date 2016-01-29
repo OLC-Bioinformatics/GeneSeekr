@@ -4,7 +4,7 @@ try:
 except ImportError:
     from distutils.core import setup, Command
     from distutils.command.install import install
-from GeneSeekr.data import makedb
+from GeneSeekr.data import makedb, updatearo
 import os
 
 
@@ -15,6 +15,12 @@ class build_card(install):
         if not os.path.isfile(db):
             makedb(db)
         install.run(self)
+
+class updatedb(Command):
+    description = 'update CARD ontology'
+    def run(self):
+        updatearo(os.path.join(os.path.split(__file__)[0], 'GeneSeekr', 'data', 'aro.dat'))
+        Command.run(self)
 
 
 setup(
@@ -31,7 +37,8 @@ setup(
     long_description=open('README.md').read(),
     install_requires=['biopython >= 1.65',
                       'argparse >= 1.4.0'],
-    cmdclass={'install': build_card},
+    cmdclass={'install': build_card,
+              'card': updatedb},
     scripts=['bin/ARMI',
              'bin/MLSTSeekr',
              'bin/GeneSeekr',

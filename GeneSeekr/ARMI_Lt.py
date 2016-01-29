@@ -12,7 +12,6 @@ __author__ = 'mike knowles'
 __doc__ = 'The purpose of this set of modules is to improve upon earlier development of ARMISeekr.py and eventually' \
           'to include generalized functionality for with OOP for GeneSeekr'
 
-
 class KeyboardInterruptError(Exception):
     pass
 

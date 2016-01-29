@@ -3,7 +3,7 @@ from GeneSeekr import ARMI_Lt
 __author__ = 'mike knowles'
 
 
-def helper(genes, targets, out, cuttoff, aro, threads):
+def helper(genes, targets, out, cuttoff, aro, threads, tolc):
     from glob import glob
     from GeneSeekr.ARMICARD import decipher
     import os
@@ -21,7 +21,9 @@ def helper(genes, targets, out, cuttoff, aro, threads):
     result.mpblast(cuttoff)
     json.dump(result.plus, open("%s/ARMI_gene_results_%s.json" % (out, time.strftime("%Y.%m.%d.%H.%M.%S")), 'w'),
               sort_keys=True, indent=4, separators=(',', ': '))
-    decipher(result.plus, pickle.load(open(aro)), out)
+    tolc = "3000237" if tolc else None
+    with open(aro) as anti:
+        decipher(result.plus, pickle.load(anti), out, tolc=tolc)
 
 
 if __name__ == '__main__':
@@ -34,9 +36,10 @@ if __name__ == '__main__':
     parser.add_argument('-a', '--anti', type=str
                         , default=resource_filename(ARMI_Lt.__name__, 'data/aro.dat')
                         , help='JSON file location')
+    parser.add_argument('--tolc', action='store_false')
     parser._option_string_actions['-m'].required = False
     parser.set_defaults(marker=resource_filename(ARMI_Lt.__name__, 'data/genes.dat'), cutoff=85)
     parser.set_defaults()
     parser.set_defaults()
     args = parser.parse_args()
-    helper(args.marker, args.input, args.output, args.cutoff, args.anti, args.threads)
+    helper(args.marker, args.input, args.output, args.cutoff, args.anti, args.threads, args.tolc)
