@@ -68,6 +68,7 @@ def updatearo(path):
                 cardict[line[26:33].rstrip()]["member"].sort()
             if "relationship: targeted_by_drug" in line:
                 cardict[aro]["sensitivity"].append(line[45:].rstrip())
+    print "updating CARD gene onotologies"
     with open(path, 'w') as handle:
         pickle.dump(cardict, handle)
 
