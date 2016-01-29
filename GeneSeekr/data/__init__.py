@@ -64,11 +64,14 @@ def updatearo(path):
                 cardict[aro]["complex"].append(line[26:33].rstrip())
                 if line[26:33].rstrip() not in cardict:
                     cardict[line[26:33].rstrip()] = defaultdict(list)
+                cardict[line[26:33].rstrip()]["member"].append(aro)
                 cardict[line[26:33].rstrip()]["member"].sort()
             if "relationship: targeted_by_drug" in line:
                 cardict[aro]["sensitivity"].append(line[45:].rstrip())
     with open(path, 'w') as handle:
         pickle.dump(cardict, handle)
+    import json
+    json.dump(cardict, open('/Users/mike/Downloads/arodat.json', 'w'), indent=4, separators=(',', ': '), sort_keys=True)
 
 if __name__ == '__main__':
     import os

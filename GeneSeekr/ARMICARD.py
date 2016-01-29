@@ -30,39 +30,38 @@ class Card:
         genedict = self.antidict[self.index]
         deps = True
         keystr = self.index.encode('utf8') + ", " + genedict['name'].encode('utf8')
-        if self.index != tolc:
-            if "member" in genedict and genome is not None:  # check if dependencies are satisfied
-                deps = False
-                membstr = lambda x: x.encode('utf8') + ", " + self.antidict[x]['name'].encode('utf8')
-                index = {keystr: [membstr(memb) for memb in genedict['member']
-                                  if memb in self.plusdict and memb != tolc]}
-                if len(index[keystr]) == len(genedict['member']):
-                    # check if the list of requirements is complete
-                    deps = True
-                    index[keystr].sort()
-                    # resistlist.extend([dict((resist, mdict) for resist in genedict['resist'])])  # create list of dicts
-                else:
-                    index = []
+        if "member" in genedict and genome is not None:  # check if dependencies are satisfied
+            deps = False
+            membstr = lambda x: x.encode('utf8') + ", " + self.antidict[x]['name'].encode('utf8')
+            index = {keystr: [membstr(memb) for memb in genedict['member']
+                              if memb in self.plusdict and memb != tolc]}
+            if len(index[keystr]) == len(genedict['member']):
+                # check if the list of requirements is complete
+                deps = True
+                index[keystr].sort()
+                # resistlist.extend([dict((resist, mdict) for resist in genedict['resist'])])  # create list of dicts
             else:
-                index = {keystr: gene} if gene else [keystr]
-            if "resist" in genedict and deps:  # If the key "resist" in gene
-                if "complex" in genedict and genome is not None:
-                    '''If the key complex in gene defines their are depenedenies'''
-                    # count = 0  # for each resistance set count at zero
-                    for comp in genedict["complex"]:  # Allow for multiple dependencies
-                        inde = Card(self.antidict, comp, self.plusdict).resist(genome, tolc=tolc)
-                        if inde:
-                            resistlist.extend(inde)
-                        # recurse through the same class if complexes are satisfied extend the list
-                else:  # if no complex then just return the list
-                    resistlist.extend([dict((resist, index) for resist in genedict['resist'])])
-            if "isa" in genedict and deps:  # Recursion for parent antibiotic traits
-                for depend in genedict["isa"]:
-                    for amr in Card(self.antidict, depend, self.plusdict).resist(genome, index, tolc=tolc):
-                        # Call self to recurse through the same class
-                        # if amr not in resistlist:
-                        resistlist.append(amr)
-                        # resistlist.extend(self.resist(genome))  # Call self to recurse through the same class
+                index = []
+        else:
+            index = {keystr: gene} if gene else [keystr]
+        if "resist" in genedict and deps:  # If the key "resist" in gene
+            if "complex" in genedict and genome is not None:
+                '''If the key complex in gene defines their are depenedenies'''
+                # count = 0  # for each resistance set count at zero
+                for comp in genedict["complex"]:  # Allow for multiple dependencies
+                    inde = Card(self.antidict, comp, self.plusdict).resist(genome, tolc=tolc)
+                    if inde:
+                        resistlist.extend(inde)
+                    # recurse through the same class if complexes are satisfied extend the list
+            else:  # if no complex then just return the list
+                resistlist.extend([dict((resist, index) for resist in genedict['resist'])])
+        if "isa" in genedict and deps:  # Recursion for parent antibiotic traits
+            for depend in genedict["isa"]:
+                for amr in Card(self.antidict, depend, self.plusdict).resist(genome, index, tolc=tolc):
+                    # Call self to recurse through the same class
+                    # if amr not in resistlist:
+                    resistlist.append(amr)
+                    # resistlist.extend(self.resist(genome))  # Call self to recurse through the same class
         return resistlist  # return the extended list
 
     def anti(self):
