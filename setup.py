@@ -1,24 +1,25 @@
-try:
-    from setuptools import setup, Command
-    from setuptools.command.install import install
-except ImportError:
-    from distutils.core import setup, Command
-    from distutils.command.install import install
-from GeneSeekr.data import makedb, updatearo
+# try:
+from setuptools import setup, Command
+from setuptools.command.install import install
+# except ImportError
+#     from distutils.core import setup, Command
+#     from distutils.command.install import install
 import os
 
 
 class build_card(install):
     description = 'download CARD fasta and modify for ARMI'
     def run(self):
+        from bin import makedb
         db = os.path.join(os.path.split(__file__)[0], 'GeneSeekr', 'data', 'genes.dat')
         if not os.path.isfile(db):
             makedb(db)
-        install.run(self)
+        self.do_egg_install()
 
 class updatedb(build_card):
     description = 'update CARD ontology'
     def run(self):
+        from bin import updatearo
         updatearo(os.path.join(os.path.split(__file__)[0], 'GeneSeekr', 'data', 'aro.dat'))
         build_card.run(self)
 
