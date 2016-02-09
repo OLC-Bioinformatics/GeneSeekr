@@ -6,7 +6,6 @@ from collections import defaultdict
 from Bio.Application import _Option, AbstractCommandline, _Switch
 from Bio.Blast.Applications import NcbiblastnCommandline
 from multiprocessing import Pool
-import json
 __author__ = 'mike knowles'
 
 __doc__ = 'The purpose of this set of modules is to improve upon earlier development of ARMISeekr.py and eventually' \
@@ -126,15 +125,16 @@ class ARMISeekr(object):
         blastn = NcbiblastnCommandline(query=fasta,
                                        db=db,
                                        evalue=1e-4,
-                                       outfmt="'6 sseqid nident slen qacc'",
+                                       outfmt="'6 sseqid nident slen qacc qstart qend'",
                                        perc_identity=self.cutoff)
         # self.yeah()
         stdout, stderr = blastn()
         if stdout != '':
-            return [[list(chunkstring(aln[0][4:], 7)), [abs(float(aln[1]) / float(aln[2])*100), aln[3]]]
-                    for aln in [hsp.split('\t')
+            return [[list(chunkstring(sseqid[4:], 7)), [abs(float(nident) / float(slen)*100),
+                                                        "{0:s} [{1:d}:{2:d}]".format(qacc, qstart, qend)]]
+                    for sseqid, nident, slen, qacc, qstart, qend in [hsp.split('\t')
                     for hsp in stdout.rstrip().split("\n")]
-                    if abs(float(aln[1]) / float(aln[2])) >= self.cutoff/100.0]
+                    if abs(float(nident) / float(nident)) >= self.cutoff/100.0]
 
     def _key(self, data):
         genelist, plus = set(), dict()
