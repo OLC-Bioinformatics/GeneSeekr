@@ -134,10 +134,12 @@ class ARMISeekr(object):
         # self.yeah()
         stdout, stderr = blastn()
         if stdout != '':
-            return [[list(chunkstring(sseqid[4:], 7)), [abs(float(nident) / float(slen)*100),
-                                                        "{0:s} [{1:s}:{2:s}]".format(qacc, qstart, qend)]]
+            return [[list(chunkstring(gene[4:], 7)), [abs(float(nident) / float(slen)*100),
+                                                      "{0:s} [{1:s}:{2:s}]".format(qacc, qstart, qend),
+                                                      allele]]
                     for sseqid, nident, slen, qacc, qstart, qend in [hsp.split('\t')
                     for hsp in stdout.rstrip().split("\n")]
+                    for gene, allele in [sseqid.split('|')]
                     if abs(float(nident) / float(nident)) >= self.cutoff/100.0]
 
     def _key(self, data):

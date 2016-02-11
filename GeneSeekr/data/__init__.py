@@ -35,7 +35,7 @@ def makedb(path):
                     aro = line.split("ARO:")[-1][:7]
                     if aro == "1000001":
                         aro = line.split("ARO:")[1][:7]
-                handle.write(">ARO:%s %s" % (aro, line[1:]))
+                handle.write(">ARO:%s|%s" % (aro, line[1:]))
             else:
                 handle.write(line)
     print 'installing CARD database into build directory'
@@ -74,5 +74,5 @@ def updatearo(path):
 
 if __name__ == '__main__':
     import os
-    # makedb(os.path.join(os.path.split(__file__)[0], 'genes.dat'))
-    updatearo(os.path.join(os.path.split(__file__)[0], 'aro.dat'))
+    makedb(os.path.join(os.path.split(__file__)[0], 'genes.dat'))
+    # updatearo(os.path.join(os.path.split(__file__)[0], 'aro.dat'))
