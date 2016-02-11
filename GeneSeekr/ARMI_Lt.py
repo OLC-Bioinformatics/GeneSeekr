@@ -115,7 +115,11 @@ class ARMISeekr(object):
             print '[{0:s}] pool is terminated'
             sys.exit(127)
         except Exception, e:
+            import traceback
             print "[{0:s}] Got exception: {1!r:s}, terminating the pool".format(time.strftime("%H:%M:%S"), e)
+            print '-'*60
+            traceback.print_exc(file=sys.stdout)
+            print '-'*60
             pool.terminate()
             print "[{0:s}] Pool is terminated".format(time.strftime("%H:%M:%S"))
             sys.exit(127)
@@ -131,7 +135,7 @@ class ARMISeekr(object):
         stdout, stderr = blastn()
         if stdout != '':
             return [[list(chunkstring(sseqid[4:], 7)), [abs(float(nident) / float(slen)*100),
-                                                        "{0:s} [{1:d}:{2:d}]".format(qacc, qstart, qend)]]
+                                                        "{0:s} [{1:s}:{2:s}]".format(qacc, qstart, qend)]]
                     for sseqid, nident, slen, qacc, qstart, qend in [hsp.split('\t')
                     for hsp in stdout.rstrip().split("\n")]
                     if abs(float(nident) / float(nident)) >= self.cutoff/100.0]
