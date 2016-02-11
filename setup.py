@@ -5,14 +5,13 @@ except ImportError:
     from distutils.core import setup, Command
     from distutils.command.install import install
 import sys
-
 import os
 
 
 class build_card(install):
     description = 'download CARD fasta and modify for ARMI'
     def run(self):
-        from bin import makedb
+        from GeneSeekr.data import makedb
         db = os.path.join(os.path.split(__file__)[0], 'GeneSeekr', 'data', 'genes.dat')
         if not os.path.isfile(db):
             makedb(db)
@@ -38,7 +37,7 @@ class build_card(install):
 class updatedb(build_card):
     description = 'update CARD ontology'
     def run(self):
-        from bin import updatearo
+        from GeneSeekr.data import updatearo
         updatearo(os.path.join(os.path.split(__file__)[0], 'GeneSeekr', 'data', 'aro.dat'))
         build_card.run(self)
 
@@ -57,6 +56,8 @@ setup(
     long_description=open('README.md').read(),
     install_requires=['biopython >= 1.65',
                       'argparse >= 1.4.0'],
+    setup_requires=['biopython >= 1.65',
+                    'argparse >= 1.4.0'],
     cmdclass=dict(install=build_card, card=updatedb),
     scripts=['bin/ARMI',
              'bin/MLSTSeekr',
