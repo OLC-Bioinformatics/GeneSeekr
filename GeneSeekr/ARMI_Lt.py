@@ -19,15 +19,7 @@ class MakeBlastDB(AbstractCommandline):
     """Base makeblastdb wrapper"""
     def __init__(self, cmd='makeblastdb', **kwargs):
         assert cmd is not None
-        extra_parameters = [
-            # Core:
-            _Switch(["-h", "h"],
-                    "Print USAGE and DESCRIPTION;  ignore other arguments."),
-            _Switch(["-help", "help"],
-                    "Print USAGE, DESCRIPTION and ARGUMENTS description; "
-                    "ignore other arguments."),
-            _Switch(["-version", "version"],
-                    "Print version number;  ignore other arguments."),
+        self.parameters = [
             # Output configuration options
             _Option(["-out", "out"],
                     "Output file prefix for db.",
@@ -39,7 +31,17 @@ class MakeBlastDB(AbstractCommandline):
                     equate=False),  # Should this be required?
             _Option(["-dbtype", "dbtype"],
                     "Molecule type of target db (string, 'nucl' or 'prot').",
-                    equate=False)]
+                    equate=False)
+        ]
+        extra_parameters = [
+            # Core:
+            _Switch(["-h", "h"],
+                    "Print USAGE and DESCRIPTION;  ignore other arguments."),
+            _Switch(["-help", "help"],
+                    "Print USAGE, DESCRIPTION and ARGUMENTS description; "
+                    "ignore other arguments."),
+            _Switch(["-version", "version"],
+                    "Print version number;  ignore other arguments.")]
         try:
             # Insert extra parameters - at the start just in case there
             # are any arguments which must come last:
