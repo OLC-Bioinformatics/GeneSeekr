@@ -10,11 +10,15 @@ import os
 
 class build_card(install):
     description = 'download CARD fasta and modify for ARMI'
-    def run(self):
-        from GeneSeekr.data import makedb
+
+    def run(self, card=None):
+        from GeneSeekr.data import Build
         db = os.path.join(os.path.split(__file__)[0], 'GeneSeekr', 'data', 'genes.dat')
         if not os.path.isfile(db):
-            makedb(db)
+            card = card if card else Build()
+            card.makedb(db)
+        if card:
+            del card
         # Attempt to detect whether we were called from setup() or by another
         # command.  If we were called by setup(), our caller will be the
         # 'run_command' method in 'distutils.dist', and *its* caller will be
@@ -36,19 +40,21 @@ class build_card(install):
 
 class updatedb(build_card):
     description = 'update CARD ontology'
-    def run(self):
-        from GeneSeekr.data import updatearo
-        updatearo(os.path.join(os.path.split(__file__)[0], 'GeneSeekr', 'data', 'aro.dat'))
-        build_card.run(self)
+
+    def run(self, obj=None):
+        from GeneSeekr.data import Build
+        card = Build()
+        card.updatearo(os.path.join(os.path.split(__file__)[0], 'GeneSeekr', 'data', 'aro.dat'))
+        build_card.run(self, card)
 
 
 setup(
     name='pythonGeneSeekr',
     version='0.5dev2',
     packages=['GeneSeekr'],
-    package_data={'': ['GeneSeekr/data/aro.dat' ,'GeneSeekr/data/genes.dat', 'GeneSeekr/data/ardb.dat']},
+    package_data={'': ['GeneSeekr/data/*.dat']},
     include_package_data=True,
-    url='https://github.com/OLC-Bioinformatics/pythonGeneSeekr',
+    url='https://github.com/OLC-Bioinformatics/GeneSeekr',
     license='MIT',
     author='mike knowles',
     author_email='mikewknowles@gmail.com',
@@ -56,8 +62,6 @@ setup(
     long_description=open('README.md').read(),
     install_requires=['biopython >= 1.65',
                       'argparse >= 1.4.0'],
-    setup_requires=['biopython >= 1.65',
-                    'argparse >= 1.4.0'],
     cmdclass=dict(install=build_card, card=updatedb),
     scripts=['bin/ARMI',
              'bin/MLSTSeekr',

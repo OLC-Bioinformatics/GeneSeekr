@@ -118,7 +118,7 @@ def recur(current, existing, index, dup=True):
     return dup, existing
 
 
-def decipher(plusdict, antidict, outputs, tolc=None):
+def decipher(plusdict, antidict, outputs, kv, tolc=None):
     from copy import deepcopy
     outputdict = {}
     for genome in sorted(plusdict):  # iterate through plus dict
@@ -161,39 +161,40 @@ def decipher(plusdict, antidict, outputs, tolc=None):
               sort_keys=True,
               indent=4,
               separators=(',', ': '))
-    antilist = []
-
-    for gene in antidict:  # build hearder list
-        resistances = Card(antidict, gene).anti()
-        if resistances is not None:
-            for resist in resistances:
-                if resist not in antilist:
-                    antilist.append(resist)
+    antilist = sorted(set((y for x in antidict for y in antidict[x]["resist"])), key=str.lower)
+    # build hearder list
     antihead = "Genome"
     drugcounter = {}
-    antilist = sorted(antilist, key=lambda s: s.lower())  # sort header case insensitive
     for anti in antilist:
         antihead += ",\"%s\"" % anti
         drugcounter[anti] = 0
 
     antistr = ""
-
     ''' Build csv string '''
-    for genome in sorted(outputdict):
+    import re
+    sorter = lambda s: int(re.search('\d+', os.path.basename(s)).group(0)) if re.search('\d+', s) else s
+    for genome in sorted(outputdict, key=sorter):  # sort by number if possible
         genomename = '\n{}'.format(os.path.split(os.path.splitext(genome)[0])[1].replace('_filteredAssembled', ""))
         antistr += genomename
         genomecount = 0
+        abbrvstr = ""
         for drug in antilist:
             if drug in outputdict[genome]["resist"]:
                 antistr += ",%i" % len(outputdict[genome]["resist"][drug])
                 drugcounter[drug] += 1
                 genomecount += 1
+                if drug in kv:
+                    if abbrvstr:
+                        abbrvstr += ", %s" % kv[drug]
+                    else:
+                        abbrvstr = kv[drug]
             else:
                 antistr += ",-"
-        antistr += ",%i" % genomecount
+        antistr += ",%i,\"%s\"" % (genomecount, abbrvstr)
     antihead += "\nCount"
     for drug in antilist:
         antihead += ",%i" % drugcounter[drug]
+    antihead += ",Total,Abbreviated List"
     antihead += antistr
 
     with open("%s/ARMI_CARD_results_%s.csv" % (outputs, time.strftime("%Y.%m.%d.%H.%M.%S")), 'w') as f:

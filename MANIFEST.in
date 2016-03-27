@@ -1,3 +1,4 @@
 include GeneSeekr/data/aro.dat
 include GeneSeekr/data/ardb.dat
 include GeneSeekr/data/genes.dat
+include GeneSeekr/data/abbrv.dat
