@@ -1,91 +1,81 @@
 # pythonGeneSeekr
 
+### Requirements
 The geneSeekr has very few requirements:
  
  1. Python
- 2. BioPython
- 3. Sequence (genome) files
- 4. Target files
- 5. ?
+ 2. Sequence (genome) files
+ 3. Target files
+ 4. BLAST
  
- There are three flags that must be provided when running the program from a system other than my own. These flag override hard-coded paths.
+### Installation
+After cloning the git:
 
-After cloning the repository running `python setup.py install` will install 
-
-* GeneSeekr -- General quick BLASTn formatter 
-* ARMI -- Antibiotic Resistance Marker Identifier: Use to find markers for any bacterial genome using CARD
-* MLSTSeekr -- Use with alleles from pubmlst
-
-These programs will become a part of the `$PATH`
-
-Upon installation, the `setup.py` script will download the CARD genes to the data folder. Running `setup.py install card` will update the CARD onotogies into the `data/aro.dat` pickle file
-
-```
-usage: GeneSeekr [-h] [--version] -i INPUT [-o OUTPUT] [-c CUTOFF]
-                 [-t THREADS] -m MARKER
-
-General quick BLASTn formatter
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --version             show program's version number and exit
-  -i INPUT, --input INPUT
-                        Specify input fasta folder
-  -o OUTPUT, --output OUTPUT
-                        Specify output folder for csv and json
-  -c CUTOFF, --cutoff CUTOFF
-                        Threshold for maximum unique bacteria for a single
-                        allele
-  -t THREADS, --threads THREADS
-                        Specify number of threads
-  -m MARKER, --marker MARKER
-                        Specify gene file in FASTA format
+```commandline
+git clone  https://github.com/OLC-Bioinformatics/GeneSeekr.git
 ```
 
-```
-usage: ARMI [-h] [--version] -i INPUT [-o OUTPUT] [-c CUTOFF] [-t THREADS]
-            [-m MARKER] [-a ANTI] [--tolc]
+Install the python package:
 
-Antibiotic Resistance Marker Identifier: Use to find markers for any bacterial
-genome
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --version             show program's version number and exit
-  -i INPUT, --input INPUT
-                        Specify input fasta folder
-  -o OUTPUT, --output OUTPUT
-                        Specify output folder for csv and json
-  -c CUTOFF, --cutoff CUTOFF
-                        Threshold for maximum unique bacteria for a single
-                        allele
-  -t THREADS, --threads THREADS
-                        Specify number of threads
-  -m MARKER, --marker MARKER
-                        Specify gene file in FASTA format
-  -a ANTI, --anti ANTI  JSON file location
-  --tolc                Include TolC-related efflux pumps
+```commandline
+python GeneSeekr/setup.py install
 ```
 
-```
-usage: MLSTSeekr [-h] [--version] -i INPUT [-o OUTPUT] [-c CUTOFF]
-                 [-t THREADS] -m MARKER
+The following files will be executable from anywhere using commandline
 
-Multilocus Seqeunce Typing Assay with BLAST: Use to find markers for any
-bacterial genome
+* [GeneSeekr] -- General quick BLASTn formatter 
+* [ARMI] -- Antibiotic Resistance Marker Identifier: Use to find markers for any bacterial genome using CARD
+* [MLSTSeekr] -- Use with alleles from pubmlst
 
-optional arguments:
-  -h, --help            show this help message and exit
-  --version             show program's version number and exit
-  -i INPUT, --input INPUT
-                        Specify input fasta folder
-  -o OUTPUT, --output OUTPUT
-                        Specify output folder for csv and json
-  -c CUTOFF, --cutoff CUTOFF
-                        Threshold for maximum unique bacteria for a single
-                        allele
-  -t THREADS, --threads THREADS
-                        Specify number of threads
-  -m MARKER, --marker MARKER
-                        Specify gene file in FASTA format
+
+Upon installation, the `setup.py` script will download the CARD genes to the data folder and will update the CARD onotogies.
+
+Using the `--card_version` and `--card_url` flags you can modify the version of the CARD database to download
+
+Currently `--card_version` defaults to **1.0.3**
+
+*e.g.,*
+```commandline
+python GeneSeekr/setup.py install --card_version=1.0.3
+python GeneSeekr/setup.py install --card_url='some url starting with http://'
 ```
+
+The `--card_url` flag will trump the `--card_version` flag so it should only used as a last resort
+
+You can bypass the CARD download altogether with which will install the programs into your path
+```commandline
+python GeneSeekr/setup.py nocard
+```
+
+### Examples (Standard Installation)
+
+For [ARMI], simply specify a folder
+
+```commandline
+ARMI /path/containing/genomes/in/fasta/format
+```
+
+Similarly, for [GeneSeekr] the folder is specfied, along with genes using the `-m` flag (typically inside a single file)
+
+```commandline
+GeneSeekr -m ./markers.fasta /path/containing/genomes/in/fasta/format
+```
+
+[MLSTSeekr] is a special case of [GeneSeekr] except the markers file is from PubMLST and the names are delimited by an underscore
+
+```commandline
+MLSTSeekr  -m ./markers.fasta /path/containing/genomes/in/fasta/format
+```
+
+
+### Commandline Reference
+The additional flags can be found using the `--help` flag for the respective program
+```commandline
+ARMI --help
+GeneSeekr --help
+MLSTSeekr --help
+```
+
+[GeneSeekr]: ./bin/GeneSeekr
+[ARMI]: ./bin/ARMI
+[MLSTSeekr]: ./bin/MLSTSeekr

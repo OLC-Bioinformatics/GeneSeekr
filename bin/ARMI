@@ -3,7 +3,7 @@ from GeneSeekr import ARMI_Lt
 __author__ = 'mike knowles'
 
 
-def helper(marker, input, output, cutoff, anti, threads, tolc, kv):
+def helper(marker, input, output, cutoff, anti, threads, tolc, kv, **kwargs):
     from glob import glob
     from GeneSeekr.ARMICARD import decipher
     import os
@@ -18,12 +18,12 @@ def helper(marker, input, output, cutoff, anti, threads, tolc, kv):
     marker = ispath(marker)
     input = ispath(input)
     result = ARMI_Lt.ARMISeekr(marker, input, threads)
-    result.mpblast(cutoff)
+    result.mpblast(cutoff, **kwargs)
     json.dump(result.plus, open("%s/ARMI_gene_results_%s.json" % (output, time.strftime("%Y.%m.%d.%H.%M.%S")), 'w'),
               sort_keys=True, indent=4, separators=(',', ': '))
     tolc = "3000237" if tolc else None
     with open(anti) as anti, open(kv) as abbrv:
-        decipher(result.plus, pickle.load(anti), output, kv=pickle.load(abbrv), tolc=tolc)
+        decipher(result.plus, pickle.load(anti), output, kv=pickle.load(abbrv), tolc=tolc, ident=cutoff)
 
 
 if __name__ == '__main__':
@@ -36,7 +36,7 @@ if __name__ == '__main__':
     parser.add_argument('-a', '--anti', type=str
                         , default=resource_filename(ARMI_Lt.__name__, 'data/aro.dat')
                         , help='JSON file location')
-    parser.add_argument('-k', '--kv'
+    parser.add_argument('-k', '--kv', metavar='Abbrevations in pickle format'
                         , default=resource_filename(ARMI_Lt.__name__, 'data/abbrv.dat')
                         , help='Location of keyvalue pairs for antibiotic abbreviation')
     parser.add_argument('--tolc', action='store_false', help='Include TolC-related efflux pumps')

@@ -1,7 +1,8 @@
 import json
 import time
 import os
-from collections import defaultdict
+import re
+from collections import defaultdict, OrderedDict
 
 __author__ = 'mike knowles'
 
@@ -118,7 +119,7 @@ def recur(current, existing, index, dup=True):
     return dup, existing
 
 
-def decipher(plusdict, antidict, outputs, kv, tolc=None):
+def decipher(plusdict, antidict, outputs, kv, tolc=None, ident="85", ana='ARMI', *args):
     from copy import deepcopy
     outputdict = {}
     for genome in sorted(plusdict):  # iterate through plus dict
@@ -126,8 +127,8 @@ def decipher(plusdict, antidict, outputs, kv, tolc=None):
         arodi = defaultdict(list)
         resistance = outputdict[genome]["resist"]
         for gene in plusdict[genome]:
-            if 'name' in antidict[gene]:
-                plusdict[genome][gene].insert(0, antidict[gene]['name'])
+            # if 'name' in antidict[gene]:
+            #     plusdict[genome][gene].insert(0, antidict[gene]['name'])
             analysis = Card(antidict, gene, plusdict[genome])
             if plusdict[genome][gene]:
                 sens = analysis.sens()  # check sensitivities
@@ -156,13 +157,58 @@ def decipher(plusdict, antidict, outputs, kv, tolc=None):
                     outputdict[genome]["sensitivity"] = DictBuild(outputdict[genome]["sensitivity"]).add(sens)
         outputdict[genome]["genes"].sort(key=lambda tup: tup[0])
         outputdict[genome]["sensitivity"].sort()
-    json.dump(outputdict,
-              open("%s/ARMI_CARD_results_%s.json" % (outputs, time.strftime("%Y.%m.%d.%H.%M.%S")), 'w'),
-              sort_keys=True,
-              indent=4,
-              separators=(',', ': '))
-    antilist = sorted(set((y for x in antidict for y in antidict[x]["resist"])), key=str.lower)
-    # build hearder list
+        outputdict[genome]["resist"] = OrderedDict(sorted(outputdict[genome]["resist"].iteritems(),
+                                                          key=lambda tup: tup[0].lower()))
+    sorter = lambda (s, v): \
+        int(re.search('\d+', os.path.basename(s)).group(0)) if re.search('\d+', os.path.basename(s)) else s
+    sgenomes = OrderedDict(sorted(outputdict.iteritems(), key=sorter))  # sort by number if possible
+    filename = "{0:s}_results_id{1:s}{2:s}".format(ana, str(ident), time.strftime("-%m.%d.%H.%M.%S"))
+    with open("%s/%s.json" % (outputs, filename), 'w') as handle:
+        json.dump(sgenomes, handle, sort_keys=False, indent=4, separators=(',', ': '))
+
+    if ana == 'ARMI':
+        antilist = ["ampC",
+                    "apramycin",
+                    "beta-lactam",
+                    "chloramphenicol",
+                    "chlortetracycline",
+                    "erythromycin",
+                    "florfenicol",
+                    "gentamicin B",
+                    "gentamicin C",
+                    "hygromycin B",
+                    "kanamycin A",
+                    "neomycin",
+                    "novobiocin",
+                    "spectinomycin",
+                    "streptomycin",
+                    "sulfamethoxazole",
+                    "tetracycline",
+                    "tetracycline derivative",
+                    "trimethoprim"]
+    elif ana == 'resfinder':
+        antilist = ["apramycin",
+                    "chloramphenicol",
+                    "erythromycin",
+                    "fluoramphenicol",
+                    "gentamicin",
+                    "gentamicin_b",
+                    "gentamincin_b",
+                    "hygromycin_b",
+                    "kanamycin",
+                    "neomycin",
+                    "penicillin",
+                    "spectinomycin",
+                    "streptomycin",
+                    "sulfonamide",
+                    "tetracycline",
+                    "trimethoprim"]
+    else:
+        antilist = sorted(set((y for x in antidict if "resist" in antidict[x] for y in antidict[x]["resist"])),
+                          key=str.lower)
+
+
+# build hearder list
     antihead = "Genome"
     drugcounter = {}
     for anti in antilist:
@@ -171,9 +217,7 @@ def decipher(plusdict, antidict, outputs, kv, tolc=None):
 
     antistr = ""
     ''' Build csv string '''
-    import re
-    sorter = lambda s: int(re.search('\d+', os.path.basename(s)).group(0)) if re.search('\d+', s) else s
-    for genome in sorted(outputdict, key=sorter):  # sort by number if possible
+    for genome in sgenomes:
         genomename = '\n{}'.format(os.path.split(os.path.splitext(genome)[0])[1].replace('_filteredAssembled', ""))
         antistr += genomename
         genomecount = 0
@@ -197,5 +241,15 @@ def decipher(plusdict, antidict, outputs, kv, tolc=None):
     antihead += ",Total,Abbreviated List"
     antihead += antistr
 
-    with open("%s/ARMI_CARD_results_%s.csv" % (outputs, time.strftime("%Y.%m.%d.%H.%M.%S")), 'w') as f:
+    with open("%s/%s.csv" % (outputs, filename), 'w') as f:
         f.write(antihead)
+
+
+if __name__ == '__main__':
+    import json, pickle
+    plusdict = "/Users/mike/Dropbox/Ad Hoc strain detection/Sara's Files/18 VTEC FASTA FIles/resfinder_gene_results_-03.27.22.10.42.json"
+    antidict = pickle.load(open('data/ardb.dat'))
+    plusdict = json.load(open(plusdict))
+    outputs = "/Users/mike/Dropbox/Ad Hoc strain detection/Sara's Files/18 VTEC FASTA FIles/"
+    kv = pickle.load(open('data/abbrv.dat'))
+    decipher(plusdict, antidict, outputs, kv, tolc=None, ident="99", ana='test')

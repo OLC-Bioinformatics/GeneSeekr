@@ -3,7 +3,7 @@ from GeneSeekr import Jackson
 __author__ = 'mike knowles'
 
 
-def helper(genes, targets, out, cuttoff, threads):
+def helper(genes, targets, out, cuttoff, threads, **kwargs):
     from glob import glob
     import os
     import json
@@ -15,7 +15,7 @@ def helper(genes, targets, out, cuttoff, threads):
     genes = ispath(genes)
     targets = ispath(targets)
     result = Jackson(genes, targets, threads)
-    result.mpblast(cuttoff)
+    result.mpblast(cuttoff, **kwargs)
     json.dump(result.plus, open("%s/GeneSeekr_gene_results_%s.json" % (out, time.strftime("%Y.%m.%d.%H.%M.%S")), 'w'),
               sort_keys=True, indent=4, separators=(',', ': '))
     result.csvwriter(out, 'GeneSeekr')

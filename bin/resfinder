@@ -3,25 +3,31 @@ from GeneSeekr import ARMI_Lt
 __author__ = 'mike knowles'
 
 
-def helper(genes, targets, out, cuttoff, aro, threads):
+def helper(marker, input, output, cutoff, anti, threads, kv, tolc, **kwargs):
     from glob import glob
     from GeneSeekr.ARMICARD import decipher
     import os
     import json
     import pickle
     import time
-    assert os.path.isdir(out), u'Output location is not a valid directory {0!r:s}'.format(out)
-    assert os.path.isfile(genes), u'ARMI-genes.fa not valid {0!r:s}'.format(genes)
-    assert os.path.isfile(aro), u'Antibiotic JSON not valid {0!r:s}'.format(aro)
+    assert os.path.isdir(output), u'Output location is not a valid directory {0!r:s}'.format(output)
+    assert os.path.isfile(marker), u'ARMI-genes.fa not valid {0!r:s}'.format(marker)
+    assert os.path.isfile(anti), u'Antibiotic JSON not valid {0!r:s}'.format(anti)
     assert isinstance(threads, int)
     ispath = (lambda x: glob(x + '/*.f*[sa]') if os.path.isdir(x) else [x])
-    genes = ispath(genes)
-    targets = ispath(targets)
-    result = ARMI_Lt.ARMISeekr(genes, targets, threads)
-    result.mpblast(cuttoff)
-    json.dump(result.plus, open("%s/resfinder_results_%s.json" % (out, time.strftime("%Y.%m.%d.%H.%M.%S")), 'w'),
+    marker = ispath(marker)
+    input = ispath(input)
+    result = ARMI_Lt.ARMISeekr(marker, input, threads)
+    result.mpblast(cutoff, **kwargs)
+    tolc = "tolc" if tolc else None
+    json.dump(result.plus, open("%s/resfinder_gene_results%s.json" % (output, time.strftime("-%m.%d.%H.%M.%S")), 'w'),
               sort_keys=True, indent=4, separators=(',', ': '))
-    decipher(result.plus, pickle.load(open(aro)), out)
+    decipher(result.plus,
+             pickle.load(open(anti)),
+             output,
+             kv=pickle.load(open(kv)),
+             ident=cutoff,
+             ana='resfinder', tolc=tolc)
 
 
 if __name__ == '__main__':
@@ -32,9 +38,15 @@ if __name__ == '__main__':
                                         'Use to find markers for any bacterial genome',
                             parents=[parent])
     parser.add_argument('-a', '--anti', type=str
-                        , default=resource_filename(ARMI_Lt.__name__, 'data/ardb.dat')
+                        , default=resource_filename(ARMI_Lt.__name__, 'data/resfinder.dat')
                         , help='JSON file location')
-    parser.set_defaults(cutoff=85)
+    parser.add_argument('-k', '--kv', metavar='Abbrevations in pickle format'
+                        , default=resource_filename(ARMI_Lt.__name__, 'data/abbrv.dat')
+                        , help='Location of keyvalue pairs for antibiotic abbreviation')
+    parser.add_argument('--tolc', action='store_false', help='Include TolC-related efflux pumps')
+    parser._option_string_actions['-m'].required = False
+    parser.set_defaults(marker=resource_filename(ARMI_Lt.__name__, 'data/res-genes.dat'), cutoff=85)
     args = vars(parser.parse_args())
-
-    helper(args['marker'], args['input'], args['output'], args['cutoff'], args['anti'], args['threads'])
+    import os
+    print os.path.abspath(args['marker'])
+    helper(**args)

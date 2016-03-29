@@ -3,7 +3,7 @@ from GeneSeekr.MLSTSeekr import GeneSeekr
 __author__ = 'mike knowles'
 
 
-def helper(genes, targets, out, cutoff, threads):
+def helper(genes, targets, out, cutoff, threads, **kwargs):
     from glob import glob
     from json import dump
     import time
@@ -15,7 +15,7 @@ def helper(genes, targets, out, cutoff, threads):
     genes = ispath(genes)
     targets = ispath(targets)
     result = GeneSeekr(genes, targets, threads)
-    result.mpblast(cutoff)
+    result.mpblast(cutoff, **kwargs)
     dump(result.plus, open("%s/MLST_gene_results_%s.json" % (out, time.strftime("%Y.%m.%d.%H.%M.%S")), 'w'),
          sort_keys=True, indent=4, separators=(',', ': '))
     result.csvwriter(out, 'rMLST')

@@ -8,17 +8,19 @@ import sys
 import os
 
 
-class build_card(install):
-    description = 'download CARD fasta and modify for ARMI'
+class UpdateDB(install):
+    description = 'update CARD ontology'
+    user_options = install.user_options + [
+        ('card-version=', None, 'Specify the version of CARD to download (default 1.0.3)'),
+        ('card-url=', None, 'URL of CARD to download, this should only be used if card_version doesn\'t work')
+    ]
 
-    def run(self, card=None):
+    def run(self, obj=None):
         from GeneSeekr.data import Build
-        db = os.path.join(os.path.split(__file__)[0], 'GeneSeekr', 'data', 'genes.dat')
-        if not os.path.isfile(db):
-            card = card if card else Build()
-            card.makedb(db)
-        if card:
-            del card
+        card = Build(self.card_url)
+        card.updatearo(os.path.join(os.path.split(__file__)[0], 'GeneSeekr', 'data', 'aro.dat'))
+        card.makedb(os.path.join(os.path.split(__file__)[0], 'GeneSeekr', 'data', 'genes.dat'))
+        del card
         # Attempt to detect whether we were called from setup() or by another
         # command.  If we were called by setup(), our caller will be the
         # 'run_command' method in 'distutils.dist', and *its* caller will be
@@ -38,19 +40,43 @@ class build_card(install):
         else:
             self.do_egg_install()
 
-class updatedb(build_card):
-    description = 'update CARD ontology'
+    def initialize_options(self):
+        install.initialize_options(self)
+        self.card_version = None
+        self.card_url = None
 
-    def run(self, obj=None):
-        from GeneSeekr.data import Build
-        card = Build()
-        card.updatearo(os.path.join(os.path.split(__file__)[0], 'GeneSeekr', 'data', 'aro.dat'))
-        build_card.run(self, card)
-
+    def finalize_options(self):
+        install.finalize_options(self)
+        self.card_version = self.card_version if self.card_version else "1.0.3"
+        if self.card_version and not self.card_url:
+            assert self.card_version != '1.0.0', 'Version 1.0.0 not supported'
+            assert "." in self.card_version, 'Invalid Card Version {0!r:s}'
+            assert all(map(str.isdigit, self.card_version.split("."))), 'Invalid Card Version {0!r:s}'
+            self.card_url = 'https://card.mcmaster.ca/download/0/broadsteet-v{0:s}.tar.gz'.format(self.card_version)
+        elif self.card_url:
+            assert self.card_url.startswith("http"), "URL must start with http "
+        import urllib2
+        request = urllib2.Request(self.card_url)
+        request.get_method = lambda: 'HEAD'
+        try:
+            response = urllib2.urlopen(request)
+            assert int(response.getcode()) < 400, \
+                'HTTP Error {0:s}: ({1:s})'.format(response.response.getcode(), self.card_url)
+            assert response.info().type != 'text/html', 'URL {0:s} points to webpage not file'.format(self.card_url)
+        except urllib2.HTTPError as e:
+            print 'HTTP Error {0:s}: {1:s} ({2:s})'.format(e.code, e.msg, e.url)
+            raise
+        except:
+            print 'Malformed CARD URL Error'
+            print u'If you do did not specify the URL:\'{0:s}\' or version:\'{1:s}\' then either CARD is down or ' \
+                  u'the link has changed, you may be able to remedy this by specifying a url or version with ' \
+                  u'--card-version=\'version\' or  --card-url=\'url\' after \'{2:s}\''\
+                .format(self.card_url, self.card_version, ' '.join(sys.argv))
+            raise
 
 setup(
-    name='pythonGeneSeekr',
-    version='0.5dev2',
+    name='GeneSeekr',
+    version='0.6.dev1',
     packages=['GeneSeekr'],
     package_data={'': ['GeneSeekr/data/*.dat']},
     include_package_data=True,
@@ -60,9 +86,10 @@ setup(
     author_email='mikewknowles@gmail.com',
     description='BLAST formatter for full genes',
     long_description=open('README.md').read(),
+    setup_requires=['setuptools >= 18.0.1'],
     install_requires=['biopython >= 1.65',
                       'argparse >= 1.4.0'],
-    cmdclass=dict(install=build_card, card=updatedb),
+    cmdclass=dict(install=UpdateDB, nocard=install),
     scripts=['bin/ARMI',
              'bin/MLSTSeekr',
              'bin/GeneSeekr',

@@ -6,11 +6,12 @@ from collections import defaultdict
 __author__ = 'mike knowles'
 ___doc___ = """Download CARD database and modify for use in ARMI"""
 
+
 class Build:
 
-    def __init__(self):
+    def __init__(self, url, fasta='./nucleotide_fasta[protein homolog model].fasta', aro='./aro.obo'):
         self.compressed = StringIO()
-        self.compressed.write(urllib.urlopen('https://card.mcmaster.ca/download/0/broadsteet-v1.0.3.tar.gz').read())
+        self.compressed.write(urllib.urlopen(url).read())
         #
         # Set the file's current position to the beginning
         # of the file so that gzip.GzipFile can read
@@ -18,8 +19,8 @@ class Build:
         #
         self.compressed.seek(0)
         self.tar = tarfile.open(fileobj=self.compressed)
-        self.fasta = self.tar.getmember('./nucleotide_fasta[protein homolog model].fasta')
-        self.aro = self.tar.getmember('./aro.obo')
+        self.fasta = self.tar.getmember(fasta)
+        self.aro = self.tar.getmember(aro)
 
     def updatearo(self, path):
         import pickle

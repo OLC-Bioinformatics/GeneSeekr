@@ -6,10 +6,12 @@ from collections import defaultdict
 from Bio.Application import _Option, AbstractCommandline, _Switch
 from Bio.Blast.Applications import NcbiblastnCommandline
 from multiprocessing import Pool
+
 __author__ = 'mike knowles'
 
 __doc__ = 'The purpose of this set of modules is to improve upon earlier development of ARMISeekr.py and eventually' \
           'to include generalized functionality for with OOP for GeneSeekr'
+
 
 class KeyboardInterruptError(Exception):
     pass
@@ -17,6 +19,7 @@ class KeyboardInterruptError(Exception):
 
 class MakeBlastDB(AbstractCommandline):
     """Base makeblastdb wrapper"""
+
     def __init__(self, cmd='makeblastdb', **kwargs):
         assert cmd is not None
         self.parameters = [
@@ -72,13 +75,14 @@ def _unpickle_method(func_name, obj, cls):
             break
     return func.__get__(obj, cls)
 
+
 import copy_reg
 import types
+
 copy_reg.pickle(types.MethodType, _pickle_method, _unpickle_method)
 
 
 class ARMISeekr(object):
-
     def yeah(self, reset=None):
         """
         :type reset: int
@@ -88,7 +92,7 @@ class ARMISeekr(object):
             self.count = 1
         if self.count == 1:
             sys.stdout.write('[{}] 1 ( \xE2\x80\xA2_\xE2\x80\xA2)'.format(time.strftime("%H:%M:%S")))
-        elif self. count % 3 == 0:
+        elif self.count % 3 == 0:
             sys.stdout.write('\r[{}] {} (\xE2\x8C\x90\xE2\x96\xA0_\xE2\x96\xA0) #Yeeeaaahhhh'
                              .format(time.strftime("%H:%M:%S"), self.count))
         elif self.count % 2 == 0:
@@ -104,7 +108,7 @@ class ARMISeekr(object):
         assert isinstance(subject, list), 'Subject is not a list "{0!r:s}"'.format(subject)
         assert isinstance(query, list), 'Query is not a list"{0!r:s}"'.format(query)
         self.count, self.subject, self.query, self.threads = 0, subject, query, threads
-        self.cutoff, self.genelist, self.plus = 70, set(), dict()
+        self.cutoff, self.genelist, self.plus, self.evalue = 70, set(), dict(), float
         self.db = map((lambda x: os.path.splitext(x)[0]), subject)  # remove the file extension for easier globing
         print '[{}] GeneSeekr input is path with {} files'.format(time.strftime("%H:%M:%S"), len(query))
         print "[{}] Creating necessary databases for BLAST".format(time.strftime("%H:%M:%S"))
@@ -119,9 +123,9 @@ class ARMISeekr(object):
         except Exception, e:
             import traceback
             print "[{0:s}] Got exception: {1!r:s}, terminating the pool".format(time.strftime("%H:%M:%S"), e)
-            print '-'*60
+            print '-' * 60
             traceback.print_exc(file=sys.stdout)
-            print '-'*60
+            print '-' * 60
             pool.terminate()
             print "[{0:s}] Pool is terminated".format(time.strftime("%H:%M:%S"))
             sys.exit(127)
@@ -130,20 +134,21 @@ class ARMISeekr(object):
     def _blast(self, (fasta, db)):
         blastn = NcbiblastnCommandline(query=fasta,
                                        db=db,
-                                       evalue=1e-4,
-                                       outfmt="'6 sseqid nident slen qacc qstart qend'",
+                                       evalue=self.evalue,
+                                       outfmt="'6 sseqid nident slen qacc qstart qend evalue'",
                                        perc_identity=self.cutoff)
         # self.yeah()
         # gb|LC004922|0-1146|ARO:3001855|ACT-35
         stdout, stderr = blastn()
         if stdout != '':
-            return [[list(chunkstring(gene[4:], 7)), [abs(float(nident) / float(slen)*100),
-                                                      "{0:s} [{1:s}:{2:s}]".format(qacc, qstart, qend),
-                                                      db, acc, loc, allele]]
-                    for sseqid, nident, slen, qacc, qstart, qend in [hsp.split('\t')
-                    for hsp in stdout.rstrip().split("\n")]
+            return [[[gene[4:]], [abs(float(nident) / float(slen) * 100),
+                                  "{0:s} [{1:s}:{2:s}]".format(qacc, qstart, qend),
+                                  "evaule:" + evalue, db, acc, loc,
+                                  nident + "/" + slen, allele]]
+                    for sseqid, nident, slen, qacc, qstart, qend, evalue in
+                    [hsp.split('\t') for hsp in stdout.rstrip().split("\n")]
                     for db, acc, loc, gene, allele in [sseqid.split('|')]
-                    if abs(float(nident) / float(nident)) >= self.cutoff/100.0]
+                    if abs(float(nident) / float(slen)) >= self.cutoff / 100.0]
 
     def _key(self, data):
         genelist, plus = set(), dict()
@@ -163,9 +168,10 @@ class ARMISeekr(object):
         except KeyboardInterrupt:
             raise KeyboardInterruptError()
 
-    def mpblast(self, cutoff=70):
+    def mpblast(self, cutoff=70, evalue=1e-7, **kwargs):
         assert isinstance(cutoff, int), u'Cutoff is not an integer {0!r:s}'.format(cutoff)
         self.cutoff = cutoff
+        self.evalue = evalue
         print "[{0:s}] Now performing and parsing BLAST database searches".format(time.strftime("%H:%M:%S"))
         start = time.time()
         p = Pool(self.threads)
@@ -184,9 +190,9 @@ class ARMISeekr(object):
             except Exception, e:
                 import traceback
                 print "[{0:s}] Got exception: {1!r:s}, terminating the pool".format(time.strftime("%H:%M:%S"), e)
-                print '-'*60
+                print '-' * 60
                 traceback.print_exc(file=sys.stdout)
-                print '-'*60
+                print '-' * 60
                 p.terminate()
                 print "[{0:s}] Pool is terminated".format(time.strftime("%H:%M:%S"))
                 sys.exit(127)
@@ -223,8 +229,8 @@ def makeblastdb((fasta, db)):
             MakeBlastDB(db=fasta, out=db, dbtype='nucl')()  # Use MakeBlastDB above
         return 0
     except KeyboardInterrupt:
-            raise KeyboardInterruptError()
+        raise KeyboardInterruptError()
 
 
 def chunkstring(string, length):
-    return (string[0+i:length+i] for i in range(0, len(string), length))
+    return (string[0 + i:length + i] for i in range(0, len(string), length))
