@@ -32,11 +32,11 @@ Upon installation, the `setup.py` script will download the CARD genes to the dat
 
 Using the `--card_version` and `--card_url` flags you can modify the version of the CARD database to download
 
-Currently `--card_version` defaults to **1.0.3**
+Currently `--card_version` defaults to **1.0.4**
 
 *e.g.,*
 ```commandline
-python GeneSeekr/setup.py install --card_version=1.0.3
+python GeneSeekr/setup.py install --card_version=1.0.4
 python GeneSeekr/setup.py install --card_url='some url starting with http://'
 ```
 

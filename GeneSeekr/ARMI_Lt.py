@@ -102,19 +102,22 @@ class ARMISeekr(object):
             sys.stdout.write('\r[{}] {} ( \xE2\x80\xA2_\xE2\x80\xA2)'.format(time.strftime("%H:%M:%S"), self.count))
         self.count += 1
 
-    def __init__(self, subject, query, threads=12):
+    def mkdb(self, pool, func):
+        print "[{}] Creating necessary databases for BLAST".format(time.strftime("%H:%M:%S"))
+        return pool.map(func, zip(self.subject, self.db))
+
+    def __init__(self, subject, query, threads=12, recreate=False):
         """:type subject: list of genes
            :type query: list of target genomes"""
         assert isinstance(subject, list), 'Subject is not a list "{0!r:s}"'.format(subject)
         assert isinstance(query, list), 'Query is not a list"{0!r:s}"'.format(query)
-        self.count, self.subject, self.query, self.threads = 0, subject, query, threads
+        self.count, self.subject, self.query, self.threads, self.recreate = 0, subject, query, threads, recreate
         self.cutoff, self.genelist, self.plus, self.evalue = 70, set(), dict(), float
         self.db = map((lambda x: os.path.splitext(x)[0]), subject)  # remove the file extension for easier globing
         print '[{}] GeneSeekr input is path with {} files'.format(time.strftime("%H:%M:%S"), len(query))
-        print "[{}] Creating necessary databases for BLAST".format(time.strftime("%H:%M:%S"))
         pool = Pool(self.threads)
         try:
-            pool.map(makeblastdb, zip(self.subject, self.db))
+            self.mkdb(pool, self.makeblastdb)
         except KeyboardInterrupt:
             print "[{0:s}] Got ^C while pool mapping, terminating the pool".format(time.strftime("%H:%M:%S"))
             pool.terminate()
@@ -129,7 +132,7 @@ class ARMISeekr(object):
             pool.terminate()
             print "[{0:s}] Pool is terminated".format(time.strftime("%H:%M:%S"))
             sys.exit(127)
-        print "\r[{0}] BLAST database(s) created".format(time.strftime("%H:%M:%S"))
+        print "\r[{0}] Database(s) created".format(time.strftime("%H:%M:%S"))
 
     def _blast(self, (fasta, db)):
         blastn = NcbiblastnCommandline(query=fasta,
@@ -154,6 +157,11 @@ class ARMISeekr(object):
         genelist, plus = set(), dict()
         try:
             fasta = data[0]
+            if isinstance(fasta, list):
+                if len(fasta) == 2:
+                    fasta = lcs(*fasta)
+                else:
+                    fasta = fasta[0]
             result = self._blast(data)
             plus[fasta] = defaultdict(list)
             if result is not None:
@@ -172,7 +180,7 @@ class ARMISeekr(object):
         assert isinstance(cutoff, int), u'Cutoff is not an integer {0!r:s}'.format(cutoff)
         self.cutoff = cutoff
         self.evalue = evalue
-        print "[{0:s}] Now performing and parsing BLAST database searches".format(time.strftime("%H:%M:%S"))
+        print "[{0:s}] Now performing and parsing alignment searches".format(time.strftime("%H:%M:%S"))
         start = time.time()
         p = Pool(self.threads)
         for genes in self.db:
@@ -221,16 +229,33 @@ class ARMISeekr(object):
         with open("%s/%s_results_%s.csv" % (out, name, time.strftime("%Y.%m.%d.%H.%M.%S")), 'wb') as csvfile:
             csvfile.write(row)
 
-
-def makeblastdb((fasta, db)):
-    try:
-        if not os.path.isfile('{}.nhr'.format(db)):  # add nhr for searching
-            assert os.path.isfile(fasta)  # check that the fasta has been specified properly
-            MakeBlastDB(db=fasta, out=db, dbtype='nucl')()  # Use MakeBlastDB above
-        return 0
-    except KeyboardInterrupt:
-        raise KeyboardInterruptError()
+    def makeblastdb(self, (fasta, db)):
+        try:
+            if not os.path.isfile('{}.nhr'.format(db)) or self.recreate:  # add nhr for searching
+                assert os.path.isfile(fasta)  # check that the fasta has been specified properly
+                MakeBlastDB(db=fasta, out=db, dbtype='nucl')()  # Use MakeBlastDB above
+            return 0
+        except KeyboardInterrupt:
+            raise KeyboardInterruptError()
+        except:
+            raise
 
 
 def chunkstring(string, length):
     return (string[0 + i:length + i] for i in range(0, len(string), length))
+
+
+def lcs(string1, string2):
+    """https://stackoverflow.com/questions/18715688/find-common-substring-between-two-strings"""
+    answer = ""
+    len1, len2 = len(string1), len(string2)
+    for i in range(len1):
+        match = ""
+        for j in range(len2):
+            if i + j < len1 and string1[i + j] == string2[j]:
+                match += string2[j]
+            else:
+                if len(match) > len(answer):
+                    answer = match
+                match = ""
+    return answer

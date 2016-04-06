@@ -1,35 +1,92 @@
 #!/usr/bin/env python
 from GeneSeekr import ARMI_Lt
+from GeneSeekr.ARMICARD import decipher
+from glob import glob
+import os
+import json
+import pickle
+import time
+
 __author__ = 'mike knowles'
 
+class ARMIRun:
 
-def helper(marker, input, output, cutoff, anti, threads, tolc, kv, **kwargs):
-    from glob import glob
-    from GeneSeekr.ARMICARD import decipher
-    import os
-    import json
-    import pickle
-    import time
-    assert os.path.isdir(output), u'Output location is not a valid directory {0!r:s}'.format(output)
-    assert os.path.isfile(marker), u'ARMI-genes.fa not valid {0!r:s}'.format(marker)
-    assert os.path.isfile(anti), u'Antibiotic JSON not valid {0!r:s}'.format(anti)
-    assert isinstance(threads, int)
-    ispath = (lambda x: glob(x + '/*.f*[sa]') if os.path.isdir(x) else [x])
-    marker = ispath(marker)
-    input = ispath(input)
-    result = ARMI_Lt.ARMISeekr(marker, input, threads)
-    result.mpblast(cutoff, **kwargs)
-    json.dump(result.plus, open("%s/ARMI_gene_results_%s.json" % (output, time.strftime("%Y.%m.%d.%H.%M.%S")), 'w'),
-              sort_keys=True, indent=4, separators=(',', ': '))
-    tolc = "3000237" if tolc else None
-    with open(anti) as anti, open(kv) as abbrv:
-        decipher(result.plus, pickle.load(anti), output, kv=pickle.load(abbrv), tolc=tolc, ident=cutoff)
+    def __init__(self, parent):
+        # parse_args defaults to [1:] for args, but you need to
+        # exclude the rest of the args too, or validation will fail
+        parser = ArgumentParser(description='Antibiotic Resistance Marker Identifier:\n'
+                                            'Use to find markers for any bacterial genome',)
+                                # usage=parent.print_help())
+        parser.format_help = parent.format_help
+        parser.add_argument('command', default='run', nargs='?')
+        # parse_args defaults to [1:] for args, but you need to
+        # exclude the rest of the args too, or validation will fail
+        args = parser.parse_known_args(sys.argv[1:2])[0]
+        if not hasattr(self, args.command) and not os.path.exists(args.command) and args.command.startswith('-'):
+            print args.command
+            print 'Unrecognized command'
+            parser.print_help()
+            exit(1)
+        # use dispatch pattern to invoke method with same name
+        if args.command in sys.argv:
+            sys.argv.remove(args.command)
+        argv = vars(parent.parse_args())
+        for arg in argv:
+            setattr(self, arg, argv[arg])
+        getattr(self, args.command)()
+
+    def dump(self, result):
+        result.mpblast(self.cutoff, self.evalue)
+        json.dump(result.plus,
+                  open("%s/ARMI_gene_results_%s.json" % (self.output, time.strftime("%Y.%m.%d.%H.%M.%S")), 'w'),
+                  sort_keys=True, indent=4, separators=(',', ': '))
+        self.tolc = "3000237" if self.tolc else None
+        with open(self.anti) as self.anti, open(self.kv) as abbrv:
+            decipher(result.plus, pickle.load(self.anti), self.output,
+                     kv=pickle.load(abbrv), tolc=self.tolc, ident=self.cutoff)
+
+    def validate(func):
+        def wrapper(self, *args):
+            assert os.path.isdir(self.output), u'Output location is not a valid directory {0!r:s}'.format(self.output)
+            assert os.path.isfile(self.marker), u'ARMI-genes.fa not valid {0!r:s}'.format(self.marker)
+            assert os.path.isfile(self.anti), u'Antibiotic JSON not valid {0!r:s}'.format(self.anti)
+            assert isinstance(self.threads, int)
+            return func(self, *args)
+        return wrapper
+
+    @validate
+    def run(self, **kwargs):
+        ispath = (lambda x: glob(x + '/*.f*[sa]') if os.path.isdir(x) else [x])
+        self.marker = ispath(self.marker)
+        self.input = ispath(self.input)
+        result = ARMI_Lt.ARMISeekr(self.marker, self.input, self.threads, self.recreate)
+        self.dump(result)
+
+    @validate
+    def raw(self, **kwargs):
+        from GeneSeekr.ARMI_Pvt import RawARMI
+        ispath = (lambda x: glob(x + '/*.f*[.gz]') if os.path.isdir(x) else [x])
+        self.marker = ispath(self.marker)
+        self.input = ispath(self.input)
+        paired = list()
+        for marker in self.marker:
+            marklist = list()
+            for marker2 in self.marker:
+                marklist.append(len(ARMI_Lt.lcs(marker, marker2)))
+            paired.append(self.marker[marklist.index(max(marklist))])
+        result = RawARMI(self.marker, self.input, self.threads, self.recreate)
+        self.dump(result)
 
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
     from GeneSeekr.MLSTSeekr import parent
     from pkg_resources import resource_filename
+    import sys
+    rawdata = False
+    if 'raw' in sys.argv:
+        sys.argv.remove('raw')
+        rawdata = True
     parser = ArgumentParser(description='Antibiotic Resistance Marker Identifier:\n'
                                         'Use to find markers for any bacterial genome',
                             parents=[parent])
@@ -40,7 +97,10 @@ if __name__ == '__main__':
                         , default=resource_filename(ARMI_Lt.__name__, 'data/abbrv.dat')
                         , help='Location of keyvalue pairs for antibiotic abbreviation')
     parser.add_argument('--tolc', action='store_false', help='Include TolC-related efflux pumps')
+    # parser.add_argument('command', default=helper, help='Run ARMI with raw data input')
     parser._option_string_actions['-m'].required = False
     parser.set_defaults(marker=resource_filename(ARMI_Lt.__name__, 'data/genes.dat'), cutoff=85)
-    args = vars(parser.parse_args())
-    helper(**args)
+    # args = parser.parse_args()
+    # if not rawdata:
+    #     helper(**vars(args))
+    ARMIRun(parser)

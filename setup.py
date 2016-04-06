@@ -47,7 +47,7 @@ class UpdateDB(install):
 
     def finalize_options(self):
         install.finalize_options(self)
-        self.card_version = self.card_version if self.card_version else "1.0.3"
+        self.card_version = self.card_version if self.card_version else "1.0.4"
         if self.card_version and not self.card_url:
             assert self.card_version != '1.0.0', 'Version 1.0.0 not supported'
             assert "." in self.card_version, 'Invalid Card Version {0!r:s}'
@@ -88,7 +88,9 @@ setup(
     long_description=open('README.md').read(),
     setup_requires=['setuptools >= 18.0.1'],
     install_requires=['biopython >= 1.65',
-                      'argparse >= 1.4.0'],
+                      'argparse >= 1.4.0',
+                      'pysam == 0.8.4',
+                      'pysamstats'],
     cmdclass=dict(install=UpdateDB, nocard=install),
     scripts=['bin/ARMI',
              'bin/MLSTSeekr',

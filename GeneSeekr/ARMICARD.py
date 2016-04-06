@@ -53,7 +53,7 @@ class Card:
                     inde = Card(self.antidict, comp, self.plusdict).resist(genome, tolc=tolc)
                     if inde:
                         resistlist.extend(inde)
-                    # recurse through the same class if complexes are satisfied extend the list
+                        # recurse through the same class if complexes are satisfied extend the list
             else:  # if no complex then just return the list
                 resistlist.extend([dict((resist, index) for resist in genedict['resist'])])
         if "isa" in genedict and deps:  # Recursion for parent antibiotic traits
@@ -113,7 +113,7 @@ def recur(current, existing, index, dup=True):
             elif type(eitem) is list:
                 eitem.append(citem)
             else:
-                dup, existing[item] = recur(citem, eitem, index+1, dup)
+                dup, existing[item] = recur(citem, eitem, index + 1, dup)
         elif not type(existing) in (str, unicode, list) and index != 0:
             existing[item] = current[item]
     return dup, existing
@@ -166,49 +166,48 @@ def decipher(plusdict, antidict, outputs, kv, tolc=None, ident="85", ana='ARMI',
     with open("%s/%s.json" % (outputs, filename), 'w') as handle:
         json.dump(sgenomes, handle, sort_keys=False, indent=4, separators=(',', ': '))
 
-    if ana == 'ARMI':
-        antilist = ["ampC",
-                    "apramycin",
-                    "beta-lactam",
-                    "chloramphenicol",
-                    "chlortetracycline",
-                    "erythromycin",
-                    "florfenicol",
-                    "gentamicin B",
-                    "gentamicin C",
-                    "hygromycin B",
-                    "kanamycin A",
-                    "neomycin",
-                    "novobiocin",
-                    "spectinomycin",
-                    "streptomycin",
-                    "sulfamethoxazole",
-                    "tetracycline",
-                    "tetracycline derivative",
-                    "trimethoprim"]
-    elif ana == 'resfinder':
-        antilist = ["apramycin",
-                    "chloramphenicol",
-                    "erythromycin",
-                    "fluoramphenicol",
-                    "gentamicin",
-                    "gentamicin_b",
-                    "gentamincin_b",
-                    "hygromycin_b",
-                    "kanamycin",
-                    "neomycin",
-                    "penicillin",
-                    "spectinomycin",
-                    "streptomycin",
-                    "sulfonamide",
-                    "tetracycline",
-                    "trimethoprim"]
-    else:
-        antilist = sorted(set((y for x in antidict if "resist" in antidict[x] for y in antidict[x]["resist"])),
-                          key=str.lower)
+    # if ana == 'ARMI':
+    #     antilist = ["ampC",
+    #                 "apramycin",
+    #                 "beta-lactam",
+    #                 "chloramphenicol",
+    #                 "chlortetracycline",
+    #                 "erythromycin",
+    #                 "florfenicol",
+    #                 "gentamicin B",
+    #                 "gentamicin C",
+    #                 "hygromycin B",
+    #                 "kanamycin A",
+    #                 "neomycin",
+    #                 "novobiocin",
+    #                 "spectinomycin",
+    #                 "streptomycin",
+    #                 "sulfamethoxazole",
+    #                 "tetracycline",
+    #                 "tetracycline derivative",
+    #                 "trimethoprim"]
+    # elif ana == 'resfinder':
+    #     antilist = ["apramycin",
+    #                 "chloramphenicol",
+    #                 "erythromycin",
+    #                 "fluoramphenicol",
+    #                 "gentamicin",
+    #                 "gentamicin_b",
+    #                 "gentamincin_b",
+    #                 "hygromycin_b",
+    #                 "kanamycin",
+    #                 "neomycin",
+    #                 "penicillin",
+    #                 "spectinomycin",
+    #                 "streptomycin",
+    #                 "sulfonamide",
+    #                 "tetracycline",
+    #                 "trimethoprim"]
+    # else:
+    antilist = sorted(set((y for x in antidict if "resist" in antidict[x] for y in antidict[x]["resist"])),
+                      key=str.lower)
 
-
-# build hearder list
+    # build hearder list
     antihead = "Genome"
     drugcounter = {}
     for anti in antilist:
@@ -247,7 +246,9 @@ def decipher(plusdict, antidict, outputs, kv, tolc=None, ident="85", ana='ARMI',
 
 if __name__ == '__main__':
     import json, pickle
-    plusdict = "/Users/mike/Dropbox/Ad Hoc strain detection/Sara's Files/18 VTEC FASTA FIles/resfinder_gene_results_-03.27.22.10.42.json"
+
+    plusdict = "/Users/mike/Dropbox/Ad Hoc strain detection/Sara's Files/18 VTEC FASTA " \
+               "FIles/resfinder_gene_results_-03.27.22.10.42.json"
     antidict = pickle.load(open('data/ardb.dat'))
     plusdict = json.load(open(plusdict))
     outputs = "/Users/mike/Dropbox/Ad Hoc strain detection/Sara's Files/18 VTEC FASTA FIles/"

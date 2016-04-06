@@ -34,3 +34,5 @@ parent.add_argument('-c', '--cutoff', type=int, help='Threshold for maximum uniq
 parent.add_argument('-t', '--threads', type=int, default=multiprocessing.cpu_count(), help='Specify number of threads')
 parent.add_argument('-m', '--marker', required=True, help='Specify gene file in FASTA format')
 parent.add_argument('--evalue', default=1e-7, type=float, help='BLAST evalue to use (default 1e-7)')
+parent.add_argument('--recreate', action='store_true', help='recreate alignment databases')
+
