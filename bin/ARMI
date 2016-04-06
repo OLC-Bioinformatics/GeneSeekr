@@ -83,10 +83,6 @@ if __name__ == '__main__':
     from GeneSeekr.MLSTSeekr import parent
     from pkg_resources import resource_filename
     import sys
-    rawdata = False
-    if 'raw' in sys.argv:
-        sys.argv.remove('raw')
-        rawdata = True
     parser = ArgumentParser(description='Antibiotic Resistance Marker Identifier:\n'
                                         'Use to find markers for any bacterial genome',
                             parents=[parent])
