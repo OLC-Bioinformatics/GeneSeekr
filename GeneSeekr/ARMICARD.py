@@ -247,10 +247,11 @@ def decipher(plusdict, antidict, outputs, kv, tolc=None, ident="85", ana='ARMI',
 if __name__ == '__main__':
     import json, pickle
 
-    plusdict = "/Users/mike/Dropbox/Ad Hoc strain detection/Sara's Files/18 VTEC FASTA " \
-               "FIles/resfinder_gene_results_-03.27.22.10.42.json"
-    antidict = pickle.load(open('data/ardb.dat'))
+    # plusdict = "/Users/mike/Dropbox/Ad Hoc strain detection/Sara's Files/18 VTEC FASTA " \
+    #            "FIles/resfinder_gene_results_-03.27.22.10.42.json"
+    plusdict = "/Users/mike/Documents/armi/output.json"
+    antidict = pickle.load(open('data/aro.dat'))
     plusdict = json.load(open(plusdict))
-    outputs = "/Users/mike/Dropbox/Ad Hoc strain detection/Sara's Files/18 VTEC FASTA FIles/"
+    outputs = "/Users/mike/Documents/armi/working"
     kv = pickle.load(open('data/abbrv.dat'))
     decipher(plusdict, antidict, outputs, kv, tolc=None, ident="99", ana='test')

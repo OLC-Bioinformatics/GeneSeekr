@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import os
-import time
 import pysamstats
 from ARMI_Lt import ARMISeekr, KeyboardInterruptError, lcs
 from subprocess import Popen, PIPE, STDOUT
@@ -39,14 +38,10 @@ class RawARMI(ARMISeekr):
 
     def __init__(self, subject, query, **kwargs):
 
-        super(RawARMI, self).__init__(subject, query, **kwargs)
+        super(RawARMI, self).__init__(subject, query, aligner="bowtie2", **kwargs)
         self.db = subject  # remove the file extension for easier globing
 
-    def mkdb(self, pool, func):
-        print "[{}] Creating necessary databases for bowtie2".format(time.strftime("%H:%M:%S"))
-        pool.map(self.makebwdb, zip(self.subject, self.db))
-
-    def makebwdb(self, (fasta, db)):
+    def makeblastdb(self, (fasta, db)):
         try:
             if not os.path.isfile('{}.1.bt2'.format(db)) or self.recreate:  # add nhr for searching
                 assert os.path.isfile(fasta)  # check that the fasta has been specified properly
@@ -60,6 +55,7 @@ class RawARMI(ARMISeekr):
 
     def _bowtie(self, raw, db):
         version = Popen(['samtools', '--version'], stdout=PIPE, stderr=STDOUT).stdout.read().split('\n')[0].split()[1]
+        raw = map(os.path.abspath, raw)
         if len(raw) == 2:
             name = lcs(*raw)
             indict = dict(("m" + str(x), fastq) for x, fastq in enumerate(raw, 1))
@@ -79,6 +75,7 @@ class RawARMI(ARMISeekr):
             Bowtie2CommandLine(bt2=os.path.splitext(os.path.abspath(db))[0],
                                threads=self.threads,
                                very_sensitive_local=True,
+                               a=True,
                                **indict)(cwd=workingdir)
         if not os.path.isfile(name + ".bai"):
             SamtoolsIndexCommandline(input_bam=name)(cwd=workingdir)
@@ -88,12 +85,11 @@ class RawARMI(ARMISeekr):
             # Values of interest can be retrieved using the appropriate keys
             # Simple filtering statement: if the number of matches at a particular position in the reference sequence is
             # greater than the number of mismatches, and the total depth is 5 or more, add the position of the results
-            if rec['matches'] > rec['mismatches'] and int(rec['reads_all']) >= 5:
-                if rec['chrom'] not in genes:
-                    genes[rec['chrom']] = dict(identity=1.0, depth=0.0)
-                else:
-                    genes[rec['chrom']]['identity'] += 1.0
-                    genes[rec['chrom']]['depth'] += float(rec['reads_all'])
+            if rec['chrom'] not in genes:
+                genes[rec['chrom']] = dict(identity=1.0, depth=float(rec['reads_all']))
+            else:
+                genes[rec['chrom']]['identity'] += 1.0
+                genes[rec['chrom']]['depth'] += float(rec['reads_all'])
         return genes
 
     def _blast(self, (raw, db)):
@@ -103,15 +99,15 @@ class RawARMI(ARMISeekr):
 
             start, end = map(int, span.split('-'))
             length = end - start + 1
+            outof = "{0:d}/{1:d}".format(*map(int, [genes[gene]['identity'], length]))
             genes[gene]['identity'] /= float(length) / 100
             genes[gene]['depth'] /= float(length)
             # Add cutoff
-            if genes[gene]['identity'] >= self.cutoff:
+            if genes[gene]['identity'] >= self.cutoff and genes[gene]['depth'] > 1.0:
                 yield [[aro[4:]],
                        [genes[gene]['identity'],
                         'average depth:' + str(genes[gene]['depth']),
-                        db, accn, span, name]]
-
+                        db, accn, span, outof, name]]
 
 
 if __name__ == '__main__':
@@ -124,6 +120,8 @@ if __name__ == '__main__':
     parent.add_argument('--recreate', action='store_true', help='recreate alignment databases')
     from glob import iglob
     # use the lcs to determine the fastq pairs
-    query = [x for x in iglob('/Users/mike/Documents/armi/EHEC-SalmRT-LmonoHist-26528831/2015-SEQ-1172-30853222/Data/Intensities/BaseCalls/*.gz')]
-    test = RawARMI(query=[query], **vars(parent.parse_args()))
-    print json.dumps(test.mpblast(cutoff=95), indent=4, sort_keys=True)
+    quandry = [y for y in iglob('/Users/mike/Documents/armi/EHEC-SalmRT-LmonoHist-26528831/2015-SEQ-1172-30853222/Data/'
+                                'Intensities/BaseCalls/*.gz')]
+    test = RawARMI(query=[quandry], **vars(parent.parse_args()))
+    with open('/Users/mike/Documents/armi/output.json', 'w') as out:
+        json.dump(test.mpblast(cutoff=95), out, indent=4, sort_keys=True)

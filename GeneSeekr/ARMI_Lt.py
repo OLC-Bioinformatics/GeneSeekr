@@ -102,22 +102,20 @@ class ARMISeekr(object):
             sys.stdout.write('\r[{}] {} ( \xE2\x80\xA2_\xE2\x80\xA2)'.format(time.strftime("%H:%M:%S"), self.count))
         self.count += 1
 
-    def mkdb(self, pool, func):
-        print "[{}] Creating necessary databases for BLAST".format(time.strftime("%H:%M:%S"))
-        return pool.map(func, zip(self.subject, self.db))
-
-    def __init__(self, subject, query, threads=12, recreate=False):
+    def __init__(self, subject, query, threads=12, recreate=False, aligner="BLAST"):
         """:type subject: list of genes
            :type query: list of target genomes"""
         assert isinstance(subject, list), 'Subject is not a list "{0!r:s}"'.format(subject)
         assert isinstance(query, list), 'Query is not a list"{0!r:s}"'.format(query)
         self.count, self.subject, self.query, self.threads, self.recreate = 0, subject, query, threads, recreate
         self.cutoff, self.genelist, self.plus, self.evalue = 70, set(), dict(), float
+        self.aligner = aligner
         self.db = map((lambda x: os.path.splitext(x)[0]), subject)  # remove the file extension for easier globing
         print '[{}] GeneSeekr input is path with {} files'.format(time.strftime("%H:%M:%S"), len(query))
         pool = Pool(self.threads)
         try:
-            self.mkdb(pool, self.makeblastdb)
+            print "[{}] Creating necessary databases for {}".format(time.strftime("%H:%M:%S"), aligner)
+            pool.map(self.makeblastdb, zip(self.subject, self.db))
         except KeyboardInterrupt:
             print "[{0:s}] Got ^C while pool mapping, terminating the pool".format(time.strftime("%H:%M:%S"))
             pool.terminate()
@@ -180,7 +178,7 @@ class ARMISeekr(object):
         assert isinstance(cutoff, int), u'Cutoff is not an integer {0!r:s}'.format(cutoff)
         self.cutoff = cutoff
         self.evalue = evalue
-        print "[{0:s}] Now performing and parsing alignment searches".format(time.strftime("%H:%M:%S"))
+        print "[{0:s}] Now performing and parsing {1:s} searches".format(time.strftime("%H:%M:%S"),self.aligner)
         start = time.time()
         p = Pool(self.threads)
         for genes in self.db:
@@ -205,7 +203,7 @@ class ARMISeekr(object):
                 print "[{0:s}] Pool is terminated".format(time.strftime("%H:%M:%S"))
                 sys.exit(127)
 
-        print "[{}] Now compiling BLAST database results".format(time.strftime("%H:%M:%S"))
+        print "[{}] Now compiling {} database results".format(time.strftime("%H:%M:%S"), self.aligner)
         end = time.time() - start
         print "[{0:s}] Elapsed time for GeneSeekr is {1:0d}m {2:0d}s with {3:0.2f}s per genome".format(
             time.strftime("%H:%M:%S"), int(end) / 60, int(end) % 60, end / float(len(self.query)))

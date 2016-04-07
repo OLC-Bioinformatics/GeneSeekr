@@ -69,12 +69,15 @@ class ARMIRun:
         self.marker = ispath(self.marker)
         self.input = ispath(self.input)
         paired = list()
-        for marker in self.marker:
+        for fastq in self.input:
             marklist = list()
-            for marker2 in self.marker:
-                marklist.append(len(ARMI_Lt.lcs(marker, marker2)))
-            paired.append(self.marker[marklist.index(max(marklist))])
-        result = RawARMI(self.marker, self.input, self.threads, self.recreate)
+            for fastq2 in self.input:
+                if fastq != fastq2:
+                    marklist.append(len(ARMI_Lt.lcs(*map(os.path.basename, [fastq, fastq2]))))
+            maxscore = self.input[marklist.index(max(marklist))]
+            if [maxscore, fastq] not in paired and maxscore != fastq:
+                paired.append([fastq, maxscore])
+        result = RawARMI(self.marker, paired, threads=self.threads, recreate=self.recreate)
         self.dump(result)
 
 
