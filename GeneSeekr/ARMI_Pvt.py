@@ -103,7 +103,7 @@ class RawARMI(ARMISeekr):
             genes[gene]['identity'] /= float(length) / 100
             genes[gene]['depth'] /= float(length)
             # Add cutoff
-            if genes[gene]['identity'] >= self.cutoff and genes[gene]['depth'] > 1.0:
+            if genes[gene]['identity'] >= self.cutoff and genes[gene]['depth'] > 4.0:
                 yield [[aro[4:]],
                        [genes[gene]['identity'],
                         'average depth:' + str(genes[gene]['depth']),
