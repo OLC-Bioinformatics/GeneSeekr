@@ -35,7 +35,6 @@ def get_version(exe):
 
 
 class RawARMI(ARMISeekr):
-
     def __init__(self, subject, query, **kwargs):
 
         super(RawARMI, self).__init__(subject, query, aligner="bowtie2", **kwargs)
@@ -86,10 +85,11 @@ class RawARMI(ARMISeekr):
             # Simple filtering statement: if the number of matches at a particular position in the reference sequence is
             # greater than the number of mismatches, and the total depth is 5 or more, add the position of the results
             if rec['chrom'] not in genes:
-                genes[rec['chrom']] = dict(identity=1.0, depth=float(rec['reads_all']))
+                genes[rec['chrom']] = dict(identity=1.0, depth=float(rec['reads_all']), quality=0.0)
             else:
                 genes[rec['chrom']]['identity'] += 1.0
                 genes[rec['chrom']]['depth'] += float(rec['reads_all'])
+                genes[rec['chrom']]['quality'] += float(rec['rms_baseq'])
         return genes
 
     def _blast(self, (raw, db)):
@@ -100,25 +100,29 @@ class RawARMI(ARMISeekr):
             start, end = map(int, span.split('-'))
             length = end - start + 1
             outof = "{0:d}/{1:d}".format(*map(int, [genes[gene]['identity'], length]))
+            genes[gene]['quality'] /= genes[gene]['identity']
             genes[gene]['identity'] /= float(length) / 100
             genes[gene]['depth'] /= float(length)
             # Add cutoff
             if genes[gene]['identity'] >= self.cutoff and genes[gene]['depth'] > 4.0:
                 yield [[aro[4:]],
-                       [genes[gene]['identity'],
-                        'average depth:' + str(genes[gene]['depth']),
-                        db, accn, span, outof, name]]
+                       dict(Identity=genes[gene]['identity'],
+                            AverageDepth=genes[gene]['depth'],
+                            AvgRMS=genes[gene]['quality'],
+                            db=db, NCBI=accn, Range=span, Bases=outof, Gene=name)]
 
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
     import json
+
     parent = ArgumentParser()
     parent.add_argument('--subject', default=['data/genes.dat'], help='Specify input fasta folder')
     # parent.add_argument('--query', default=[os.getcwd()], help='Specify output folder for csv and json')
     parent.add_argument('-t', '--threads', type=int, default=4, help='Specify number of threads')
     parent.add_argument('--recreate', action='store_true', help='recreate alignment databases')
     from glob import iglob
+
     # use the lcs to determine the fastq pairs
     quandry = [y for y in iglob('/Users/mike/Documents/armi/EHEC-SalmRT-LmonoHist-26528831/2015-SEQ-1172-30853222/Data/'
                                 'Intensities/BaseCalls/*.gz')]

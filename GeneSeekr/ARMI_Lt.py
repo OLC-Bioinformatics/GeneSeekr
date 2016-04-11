@@ -142,14 +142,13 @@ class ARMISeekr(object):
         # gb|LC004922|0-1146|ARO:3001855|ACT-35
         stdout, stderr = blastn()
         if stdout != '':
-            return [[[gene[4:]], [abs(float(nident) / float(slen) * 100),
-                                  "{0:s} [{1:s}:{2:s}]".format(qacc, qstart, qend),
-                                  "evaule:" + evalue, db, acc, loc,
-                                  nident + "/" + slen, allele]]
-                    for sseqid, nident, slen, qacc, qstart, qend, evalue in
-                    [hsp.split('\t') for hsp in stdout.rstrip().split("\n")]
-                    for db, acc, loc, gene, allele in [sseqid.split('|')]
-                    if abs(float(nident) / float(slen)) >= self.cutoff / 100.0]
+            for sseqid, nident, slen, qacc, qstart, qend, evalue in \
+                    [hsp.split('\t') for hsp in stdout.rstrip().split("\n")]:
+                db, acc, loc, gene, allele = sseqid.split('|')
+                if abs(float(nident) / float(slen)) >= self.cutoff / 100.0:
+                    yield [[gene[4:]], dict(Indentity=abs(float(nident) / float(slen) * 100),
+                                            NCBI="{0:s} [{1:s}:{2:s}]".format(qacc, qstart, qend),
+                                            Evalue=evalue, db=db, Range=loc, Bases=nident + "/" + slen, Gene=allele)]
 
     def _key(self, data):
         genelist, plus = set(), dict()
@@ -178,7 +177,7 @@ class ARMISeekr(object):
         assert isinstance(cutoff, int), u'Cutoff is not an integer {0!r:s}'.format(cutoff)
         self.cutoff = cutoff
         self.evalue = evalue
-        print "[{0:s}] Now performing and parsing {1:s} searches".format(time.strftime("%H:%M:%S"),self.aligner)
+        print "[{0:s}] Now performing and parsing {1:s} searches".format(time.strftime("%H:%M:%S"), self.aligner)
         start = time.time()
         p = Pool(self.threads)
         for genes in self.db:
