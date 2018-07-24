@@ -1,0 +1,95 @@
+#!/usr/bin/env python3
+from accessoryFunctions.accessoryFunctions import printtime
+from bin.blastn_align import BLASTn
+from argparse import ArgumentParser
+from time import time
+
+
+if __name__ == '__main__':
+
+    class Arguments(object):
+
+        @staticmethod
+        def parser_populate(parser):
+            """
+            Populates empty subparser with arguments. Keeps from having to use the same arguments several times
+            in the code
+            :param parser: Empty subparser objectg
+            :return: Populated subparser object
+            """
+            parser.add_argument('--version',
+                                action='version',
+                                version='%(prog)')
+            parser.add_argument('-q', '--queryfile',
+                                required=True,
+                                help='Name and path of query file')
+            parser.add_argument('-s', '--subjectfile',
+                                required=True,
+                                help='Name and path of subject file')
+            parser.add_argument('-r', '--reportpath',
+                                required=True,
+                                help='Specify output folder for csv')
+            parser.add_argument('-n', '--numthreads',
+                                type=int,
+                                help='Specify number of threads')
+            parser.add_argument('program')
+            return parser
+
+        def blastn_setup(self, subparser):
+            """
+            Populate empty subparser with arguments. Create arguments object from parser object. Send
+            arguments object to BLASTn script
+            :param subparser: Empty subparser
+            """
+            # Populate the specific subparser
+            parser = self.parser_populate(subparser)
+            # Create the arguments from the parser object
+            args = parser.parse_args()
+            # Add the start time variable to the object
+            args.start = self.start
+            # Run the analyses
+            align = BLASTn(args)
+            align.main()
+
+        def __init__(self, parser):
+            """
+
+            :param parser: Top level argument parser created to allow for error handling
+            """
+            # Start time
+            self.start = time()
+            # Create all the necessary subparsers
+            subparsers = parser.add_subparsers(help='BLAST program to use. Options are:'
+                                                    'BLASTn, BLASTp, tBLASTn, and tBLASTx')
+            # BLASTn
+            blastn_subparser = subparsers.add_parser(
+                'blastn',
+                help='Runs BLASTn (nucleotide against nucleotide')
+            # BLASTp
+            blastp_subparser = subparsers.add_parser(
+                'blastp',
+                help='Runs BLASTp (amino acid against amino acid')
+            # tBLASTn
+            tblastn_subparser = subparsers.add_parser(
+                'tblastn',
+                help='Runs tBLASTn (protein against translated nucleotide')
+            # tBLASTx
+            tblastx_subparser = subparsers.add_parser(
+                'tblastx',
+                help='Runs tBLASTx (translated nucleotide against translated nucleotide')
+            # Call the blast_setup method as the default action for the selected subparser
+            blastn_subparser.set_defaults(func=self.blastn_setup(blastn_subparser))
+
+
+    # Run the class
+    # # Because of issues with subparsers, if GeneSeekr -h is run on the command line, a TypeError occurs
+    # create a simple parser with instructions on how to properly run the script
+    argparser = ArgumentParser(
+        description='Use to compare two sequences',
+        usage='GeneSeekr [blastn/blastp/tblastn/tblastx] -s [sequence path] -t [target path] -r [report path]'
+    )
+    try:
+        Arguments(argparser)
+    except TypeError:
+        argparser.parse_args()
+

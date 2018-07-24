@@ -1,7 +1,0 @@
-include GeneSeekr/data/aro.dat
-include GeneSeekr/data/ardb.dat
-include GeneSeekr/data/genes.dat
-include GeneSeekr/data/abbrv.dat
-include GeneSeekr/data/ardb-genes.dat
-include GeneSeekr/data/resfinder.dat
-include GeneSeekr/data/res-genes.dat
