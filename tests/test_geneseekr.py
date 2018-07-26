@@ -119,7 +119,7 @@ def test_blastn_results():
     with open(blastn_report) as blast_results:
         data = blast_results.readline()
         results = data.split('\t')
-        assert results[2] == '179'
+        assert int(results[2]) >= 179
 
 
 def test_blast_parse():
