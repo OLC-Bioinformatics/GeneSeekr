@@ -62,7 +62,8 @@ class BLASTn(object):
                                                          self.reportpath,
                                                          self.align,
                                                          self.targetfiles,
-                                                         self.records)
+                                                         self.records,
+                                                         self.program)
         elif self.analysistype == 'virulence':
             # VirulenceFinder-specific report
             geneseekr.virulencefinder_reporter(self.metadata,
@@ -75,7 +76,8 @@ class BLASTn(object):
                                                self.reportpath,
                                                self.align,
                                                self.targetfiles,
-                                               self.records)
+                                               self.records,
+                                               self.program)
         # Remove the attributes from the object; they take up too much room on the .json report
         for sample in self.metadata:
             delattr(sample[self.analysistype], "targetnames")

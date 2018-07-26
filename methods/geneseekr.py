@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from accessoryFunctions.accessoryFunctions import run_subprocess, make_path, \
-    combinetargets, MetadataObject, GenObject
+    combinetargets, MetadataObject, GenObject, printtime
 from biotools.bbtools import kwargs_to_string
 from Bio.Blast.Applications import NcbiblastnCommandline, NcbitblastxCommandline
 from Bio.Application import ApplicationError
@@ -92,8 +92,10 @@ class GeneSeekr(object):
         for sample in metadata:
             # Run the BioPython BLASTn module with the genome as query, fasta (target gene) as db.
             make_path(sample[analysistype].reportdir)
+            # Set the name and path of the BLAST report as reportdir/samplename_blastprogram.csv
             sample[analysistype].report = os.path.join(
-                sample[analysistype].reportdir, '{}.csv'.format(sample.name))
+                sample[analysistype].reportdir, '{name}_{program}.csv'.format(name=sample.name,
+                                                                              program=program))
             # Check the size of the report (if it exists). If it has size 0, something went wrong on a previous
             # iteration of the script. Delete the empty file in preparation for another try
             try:
@@ -1152,3 +1154,49 @@ def sequencenames(contigsfile):
     for record in SeqIO.parse(open(contigsfile, "rU", encoding="iso-8859-15"), "fasta"):
         sequences.append(record.id)
     return sequences
+
+
+def objector(kw_dict, start):
+    metadata = MetadataObject()
+    for key, value in kw_dict.items():
+        setattr(metadata, key, value)
+        # Set the analysis type based on the arguments provided
+        if metadata.resfinder:
+            metadata.analysistype = 'resfinder'
+        elif metadata.virulencefinder:
+            metadata.analysistype = 'virulence'
+        # Warn that only one type of analysis can be perfomed at a time
+        elif metadata.resfinder and metadata.virulencefinder:
+            printtime('Cannot perform ResFinder and VirulenceFinder simultaneously. Please choose only one '
+                      'of the -R and -v flags', start)
+        # Default to geneseekr
+        else:
+            metadata.analysistype = 'geneseekr'
+        # Add the start time variable to the object
+        metadata.start = start
+    return metadata
+
+
+def modify_usage_error(subcommand):
+    """
+    Method to append the help menu to a modified usage error when a subcommand is specified, but options are missing
+    """
+    import click
+    from click._compat import get_text_stderr
+    from click.utils import echo
+
+    def show(self, file=None):
+        import sys
+        if file is None:
+            file = get_text_stderr()
+        color = None
+        if self.ctx is not None:
+            color = self.ctx.color
+        echo('Error: %s\n' % self.format_message(), file=file, color=color)
+        # Set the sys.argv to be the first two arguments passed to the script if the subcommand was specified
+        arg2 = sys.argv[1] if sys.argv[1] in ['blastn', 'blastp', 'tblastn', 'tblastx'] else str()
+        sys.argv = [' '.join([sys.argv[0], arg2])] if arg2 else [sys.argv[0]]
+        # Call the help
+        subcommand(['--help'])
+
+    click.exceptions.UsageError.show = show

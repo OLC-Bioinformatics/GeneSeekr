@@ -1,0 +1,151 @@
+#!/usr/bin/env python3
+from accessoryFunctions.accessoryFunctions import MetadataObject, printtime
+from methods.geneseekr import modify_usage_error, objector
+from bin.blastn import BLASTn as run_BLASTn
+from bin.tblastx import tBLASTx as run_tBLASTx
+from argparse import ArgumentParser
+from time import time
+import click
+
+start = time()
+
+# https://stackoverflow.com/a/40195800
+click_options = [
+    click.option('-s', '--sequencepath',
+                 required=True,
+                 help='Specify input fasta folder'),
+    click.option('-t', '--targetpath',
+                 required=True,
+                 help='Specify folder of targets'),
+    click.option('-r', '--reportpath',
+                 required=True,
+                 help='Specify output folder for csv'),
+    click.option('-c', '--cutoff',
+                 type=int,
+                 default=70, help='Minumum sequence identity threshold for a match to be reported'),
+    click.option('-e', '--evalue',
+                 default='1E-5',
+                 help='Minimum evalue to use for BLAST analyses'),
+    click.option('-n', '--numthreads',
+                 type=int,
+                 help='Specify number of threads'),
+    click.option('-a', '--align',
+                 is_flag=True,
+                 help='Optionally output alignments of genes with less than 100% identity to reference '
+                      'genes. This alignment will use amino acid sequences for both query and reference'),
+    click.option('-u', '--unique',
+                 is_flag=True,
+                 help='Do not report multiple hits at the same location in a contig. Instead, store the '
+                      'best hit, and ignore the rest'),
+    click.option('-R', '--resfinder',
+                 is_flag=True,
+                 help='Perform ResFinder-like analyses'),
+    click.option('-V', '--virulencefinder',
+                 is_flag=True,
+                 help='Perform VirulenceFinder-like analyses'),
+    click.version_option(version='1.0.0')
+]
+
+
+def add_options(options):
+    def _add_options(func):
+        for option in reversed(options):
+            func = option(func)
+        return func
+    return _add_options
+
+
+@click.group(context_settings=dict(help_option_names=['-h', '--help']))
+def group():
+    pass
+
+
+@group.command()
+@add_options(click_options)
+def blastn(**kwargs):
+    metadata = objector(kwargs, start)
+    metadata.program = 'blastn'
+    geneseekr = run_BLASTn(metadata)
+    geneseekr.geneseekr()
+
+
+@group.command()
+@add_options(click_options)
+def tblastx(**kwargs):
+    metadata = objector(kwargs, start)
+    metadata.program = 'tblastx'
+    geneseekr = run_tBLASTx(metadata)
+    geneseekr.geneseekr()
+
+
+# Change the default behaviour of click to print the help menu when a subcommand is specified, but is missing arguments
+# modify_usage_error(tblastx)
+
+if __name__ == '__main__':
+    group(obj={})
+
+
+# class PipelineInit(object):
+#
+#     def strainer(self):
+#         for sample in self.runmetadata.samples:
+#             if sample.general.bestassemblyfile != 'NA':
+#                 setattr(sample, self.analysistype, GenObject())
+#                 if self.genusspecific:
+#                     try:
+#                         genus = sample.general.closestrefseqgenus
+#                     except AttributeError:
+#                         genus = sample.general.referencegenus
+#                     # Allow Shigella to use the same targets as Escherichia
+#                     genus = genus if genus != 'Shigella' else 'Escherichia'
+#                     targetpath = os.path.join(self.referencefilepath, self.analysistype, genus)
+#                 else:
+#                     targetpath = os.path.join(self.referencefilepath, self.analysistype)
+#                 targets = glob(os.path.join(targetpath, '*.tfa'))
+#                 targetcheck = glob(os.path.join(targetpath, '*.tfa'))
+#                 if targetcheck:
+#                     try:
+#                         combinedtargets = glob(os.path.join(targetpath, '*.fasta'))[0]
+#                     except IndexError:
+#                         combinetargets(targets, targetpath)
+#                         combinedtargets = glob(os.path.join(targetpath, '*.fasta'))[0]
+#                     sample[self.analysistype].targets = targets
+#                     sample[self.analysistype].combinedtargets = combinedtargets
+#                     sample[self.analysistype].targetpath = targetpath
+#                     sample[self.analysistype].targetnames = sequencenames(combinedtargets)
+#                     sample[self.analysistype].reportdir = os.path.join(sample.general.outputdirectory,
+#                                                                        self.analysistype)
+#                 else:
+#                     # Set the metadata file appropriately
+#                     sample[self.analysistype].targets = 'NA'
+#                     sample[self.analysistype].combinedtargets = 'NA'
+#                     sample[self.analysistype].targetpath = 'NA'
+#                     sample[self.analysistype].targetnames = 'NA'
+#                     sample[self.analysistype].reportdir = 'NA'
+#                     sample[self.analysistype].blastresults = 'NA'
+#             else:
+#                 # Set the metadata file appropriately
+#                 setattr(sample, self.analysistype, GenObject())
+#                 sample[self.analysistype].targets = 'NA'
+#                 sample[self.analysistype].combinedtargets = 'NA'
+#                 sample[self.analysistype].targetpath = 'NA'
+#                 sample[self.analysistype].targetnames = 'NA'
+#                 sample[self.analysistype].reportdir = 'NA'
+#                 sample[self.analysistype].blastresults = 'NA'
+#
+#     def __init__(self, inputobject, analysistype, genusspecific, cutoff, unique):
+#         self.runmetadata = inputobject.runmetadata
+#         self.analysistype = analysistype
+#         self.path = inputobject.path
+#         self.start = inputobject.starttime
+#         self.referencefilepath = inputobject.reffilepath
+#         self.threads = inputobject.cpus
+#         self.reportdir = inputobject.reportpath
+#         self.cutoff = cutoff
+#         self.logfile = inputobject.logfile
+#         self.pipeline = True
+#         self.genusspecific = genusspecific
+#         self.align = False
+#         self.unique = unique
+#         # Get the alleles and profile into the metadata
+#         self.strainer()

@@ -1,0 +1,52 @@
+name: geneseekr
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - biopython=1.70=np112py35_1
+  - blast=2.6.0=boost1.61_1
+  - mmtf-python=1.0.2=py35_0
+  - atomicwrites=1.1.5=py35_0
+  - attrs=18.1.0=py_1
+  - ca-certificates=2018.4.16=0
+  - certifi=2018.4.16=py35_0
+  - click=6.7=py_1
+  - more-itertools=4.2.0=py35_1
+  - openssl=1.0.2o=0
+  - pluggy=0.6.0=py_0
+  - py=1.5.4=py_0
+  - pytest=3.6.3=py35_0
+  - six=1.11.0=py35_1
+  - xlsxwriter=1.0.5=py_0
+  - boost=1.61.0=py35_0
+  - freetype=2.8=hab7d2ae_1
+  - icu=54.1=0
+  - intel-openmp=2018.0.3=0
+  - jpeg=9b=h024ee3a_2
+  - libedit=3.1.20170329=h6b74fdf_2
+  - libffi=3.2.1=hd88cf55_4
+  - libgcc=7.2.0=h69d50b8_2
+  - libgcc-ng=7.2.0=hdf63c60_3
+  - libgfortran-ng=7.2.0=hdf63c60_3
+  - libpng=1.6.34=hb9fc6fc_0
+  - libstdcxx-ng=7.2.0=hdf63c60_3
+  - libtiff=4.0.9=he85c1e1_1
+  - mkl=2018.0.3=1
+  - msgpack-python=0.5.6=py35h6bb024c_0
+  - ncurses=6.1=hf484d3e_0
+  - numpy=1.12.1=py35hca0bb5e_1
+  - olefile=0.45.1=py35_0
+  - pillow=5.1.0=py35h3deb7b8_0
+  - pip=10.0.1=py35_0
+  - python=3.5.5=hc3d631a_4
+  - readline=7.0=ha6073c6_4
+  - reportlab=3.4.0=py35_0
+  - setuptools=39.2.0=py35_0
+  - sqlite=3.24.0=h84994c4_0
+  - tk=8.6.7=hc745277_3
+  - wheel=0.31.1=py35_0
+  - xz=5.2.4=h14c3975_4
+  - zlib=1.2.11=ha838bed_2
+prefix: /home/adamkoziol/miniconda/envs/geneseekr
+
