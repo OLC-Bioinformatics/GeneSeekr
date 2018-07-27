@@ -47,11 +47,15 @@ class BLASTn(object):
             self.metadata = geneseekr.filter_unique(self.metadata,
                                                     self.analysistype)
         else:
-            # Run the standard blastn parsing module
-            self.metadata = geneseekr.parse_blastn(self.metadata,
-                                                   self.analysistype,
-                                                   self.fieldnames,
-                                                   self.cutoff)
+            # Run the standard blast parsing module
+            self.metadata = geneseekr.parse_blast(self.metadata,
+                                                  self.analysistype,
+                                                  self.fieldnames,
+                                                  self.cutoff,
+                                                  self.program)
+        # Create dictionaries
+        self.metadata = geneseekr.dict_initialise(self.metadata,
+                                                  self.analysistype)
         # Create reports
         printtime('Creating {at} reports'.format(at=self.analysistype), self.start)
         if self.analysistype == 'resfinder':

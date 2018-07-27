@@ -12,4 +12,5 @@ before_install:
   - source activate geneseekr 
   
 script:
-  - pytest tests/test_geneseekr.py
+  - pytest tests/test_resfinder_blastn.py
+  - pytest tests/test_resfinder_tblastx.py

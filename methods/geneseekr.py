@@ -161,13 +161,14 @@ class GeneSeekr(object):
         return tblastx
 
     @staticmethod
-    def parse_blastn(metadata, analysistype, fieldnames, cutoff):
+    def parse_blast(metadata, analysistype, fieldnames, cutoff, program):
         """
         Parse the blast results, and store necessary data in dictionaries in metadata object
         :param metadata: Metadata object
         :param analysistype: Current analysis type
         :param fieldnames: List of column names in BLAST report
         :param cutoff: Percent identity threshold
+        :param program: BLAST program used in the analyses
         :return: Updated metadata object
         """
         for sample in metadata:
@@ -178,10 +179,18 @@ class GeneSeekr(object):
             sample[analysistype].targetsequence = dict()
             # Go through each BLAST result
             for row in blastdict:
+                # Create the subject length variable - if the sequences are DNA (e.g. blastn), use the subject
+                # length as usual; if the sequences are protein (e.g. tblastx), use the subject length / 3
+                if program == 'blastn':
+                    subject_length = float(row['subject_length'])
+                elif program == 'tblastx':
+                    subject_length = float(row['subject_length']) / 3
+                else:
+                    subject_length = float(row['subject_length'])
                 # Calculate the percent identity and extract the bitscore from the row
                 # Percent identity is the (length of the alignment - number of mismatches) / total subject length
                 percentidentity = float('{:0.2f}'.format((float(row['positives']) - float(row['gaps'])) /
-                                                         float(row['subject_length']) * 100))
+                                                         subject_length * 100))
                 target = row['subject_id']
                 # If the percent identity is greater than the cutoff
                 if percentidentity >= cutoff:
@@ -395,6 +404,23 @@ class GeneSeekr(object):
         # Return the updated metadata object
         return metadata
 
+    def dict_initialise(self, metadata, analysistype):
+        """
+        Initialise dictionaries for storing DNA and amino acid sequences
+        :param metadata: Metadata object
+        :param analysistype: Current analysis type
+        :return: Updated metadata
+        """
+        for sample in metadata:
+            sample[analysistype].dnaseq = dict()
+            sample[analysistype].protseq = dict()
+            sample[analysistype].ntindex = dict()
+            sample[analysistype].aaindex = dict()
+            sample[analysistype].ntalign = dict()
+            sample[analysistype].aaalign = dict()
+            sample[analysistype].aaidentity = dict()
+        return metadata
+
     def reporter(self, metadata, analysistype, reportpath, align, targetfiles, records, program):
         """
         Custom reports for standard GeneSeekr analyses.
@@ -409,7 +435,9 @@ class GeneSeekr(object):
         """
         # Create a workbook to store the report. Using xlsxwriter rather than a simple csv format, as I want to be
         # able to have appropriately sized, multi-line cells
-        workbook = xlsxwriter.Workbook(os.path.join(reportpath, '{}.xlsx'.format(analysistype)))
+        workbook = xlsxwriter.Workbook(os.path.join(reportpath, '{at}_{program}.xlsx'
+                                                    .format(at=analysistype,
+                                                            program=program)))
         # New worksheet to store the data
         worksheet = workbook.add_worksheet()
         # Add a bold format for header cells. Using a monotype font size 10
@@ -534,7 +562,9 @@ class GeneSeekr(object):
         genedict, altgenedict = ResistanceNotes.notes(target_dir)
         # Create a workbook to store the report. Using xlsxwriter rather than a simple csv format, as I want to be
         # able to have appropriately sized, multi-line cells
-        workbook = xlsxwriter.Workbook(os.path.join(reportpath, '{}.xlsx'.format(analysistype)))
+        workbook = xlsxwriter.Workbook(os.path.join(reportpath, '{at}_{program}.xlsx'
+                                                    .format(at=analysistype,
+                                                            program=program)))
         # New worksheet to store the data
         worksheet = workbook.add_worksheet()
         # Add a bold format for header cells. Using a monotype font size 10
@@ -762,14 +792,6 @@ class GeneSeekr(object):
         :param program BLAST program used in the analyses
         :return:
         """
-        # Initialise dictionaries
-        sample[analysistype].dnaseq = dict()
-        sample[analysistype].protseq = dict()
-        sample[analysistype].ntindex = dict()
-        sample[analysistype].aaindex = dict()
-        sample[analysistype].ntalign = dict()
-        sample[analysistype].aaalign = dict()
-        sample[analysistype].aaidentity = dict()
         # Remove any gaps incorporated into the sequence
         sample[analysistype].targetsequence[target] = \
             sample[analysistype].targetsequence[target].replace('-', '')
