@@ -1,0 +1,84 @@
+{
+    "docs": [
+        {
+            "location": "/",
+            "text": "CFIA OLC GeneSeekr\n\n\nGitHub Repo\n\n\n\n\nThis pipeline is designed to perform sequence alignments",
+            "title": "Home"
+        },
+        {
+            "location": "/#cfia-olc-geneseekr",
+            "text": "",
+            "title": "CFIA OLC GeneSeekr"
+        },
+        {
+            "location": "/#github-repo",
+            "text": "This pipeline is designed to perform sequence alignments",
+            "title": "GitHub Repo"
+        },
+        {
+            "location": "/installation/",
+            "text": "COWBAT Installation\n\n\nDependencies\n\n\n\n\nLinux system\n\n\nConda\n\n\n\n\nConda method\n\n\nThe way I install conda:\n\n\nwget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh\nbash miniconda.sh -b -p $HOME/miniconda\nexport PATH=\"$HOME/miniconda/bin:$PATH\"\nconda config --set always_yes yes\nconda update -q conda\n\n\n\n\nThe easiest way to install GeneSeekr is to download the source code \nGitHub Link\n\n\ngit clone https://github.com/OLC-Bioinformatics/GeneSeekr.git\ncd GeneSeekr\nexport PATH=\"/path/to/repository/GeneSeekr:$PATH\"\nconda env create -f environment.yml\nsource activate geneseekr\n\n\n\n\nTesting\n\n\nUnit tests",
+            "title": "Installation"
+        },
+        {
+            "location": "/installation/#cowbat-installation",
+            "text": "",
+            "title": "COWBAT Installation"
+        },
+        {
+            "location": "/installation/#dependencies",
+            "text": "Linux system  Conda",
+            "title": "Dependencies"
+        },
+        {
+            "location": "/installation/#conda-method",
+            "text": "The way I install conda:  wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh\nbash miniconda.sh -b -p $HOME/miniconda\nexport PATH=\"$HOME/miniconda/bin:$PATH\"\nconda config --set always_yes yes\nconda update -q conda  The easiest way to install GeneSeekr is to download the source code  GitHub Link  git clone https://github.com/OLC-Bioinformatics/GeneSeekr.git\ncd GeneSeekr\nexport PATH=\"/path/to/repository/GeneSeekr:$PATH\"\nconda env create -f environment.yml\nsource activate geneseekr",
+            "title": "Conda method"
+        },
+        {
+            "location": "/installation/#testing",
+            "text": "Unit tests",
+            "title": "Testing"
+        },
+        {
+            "location": "/tutorial/",
+            "text": "Tutorial\n\n\nBasic settings\n\n\nCommands\n\n\nGeneSeekr requires the desired BLAST program to be specified. The\nacceptable options are:\n\n\n* blastn (nucleotide:nucleotide)\n* blastp (protein:protein)\n* blastx (translated nucleotide:protein)\n* tblastn (protein:translated nucleotide)\n* tblastx (translated nucleotide: translated nucleotide)\n\n\n\nArguments\n\n\nThe pipeline is designed to run with a minimum of three arguments:\n\n\n* path to sequence data (-s)\n* path to target database (-t)\n* path in which report folder is to be created (-r)\n\n\n\nThe following command will run geneseekr using BLASTn on the supplied sequences and database\n\n\ngeneseekr blastn -s /path/to/sequences -t /path/to/targets -r /path/to/reports\n\n\n\n\n\nOptional Arguments\n\n\nThere are a number of optional arguments than can be supplied to the geneseekr script\n\n\n  Options:\n  -s, --sequencepath TEXT   Specify input fasta folder  [required]\n  -t, --targetpath TEXT     Specify folder of targets  [required]\n  -r, --reportpath TEXT     Specify output folder for csv  [required]\n  -c, --cutoff INTEGER      Minumum sequence identity threshold for a match to\n                            be reported\n  -e, --evalue TEXT         Minimum evalue to use for BLAST analyses\n  -n, --numthreads INTEGER  Specify number of threads\n  -a, --align               Optionally output alignments of genes with less\n                            than 100% identity to reference genes. This\n                            alignment will use amino acid sequences for both\n                            query and reference\n  -u, --unique              Do not report multiple hits at the same location\n                            in a contig. Instead, store the best hit, and\n                            ignore the rest\n  -R, --resfinder           Perform ResFinder-like analyses\n  -V, --virulencefinder     Perform VirulenceFinder-like analyses\n  --version                 Show the version and exit.\n  -h, --help                Show this message and exit.",
+            "title": "Tutorial"
+        },
+        {
+            "location": "/tutorial/#tutorial",
+            "text": "",
+            "title": "Tutorial"
+        },
+        {
+            "location": "/tutorial/#basic-settings",
+            "text": "",
+            "title": "Basic settings"
+        },
+        {
+            "location": "/tutorial/#commands",
+            "text": "GeneSeekr requires the desired BLAST program to be specified. The\nacceptable options are:  * blastn (nucleotide:nucleotide)\n* blastp (protein:protein)\n* blastx (translated nucleotide:protein)\n* tblastn (protein:translated nucleotide)\n* tblastx (translated nucleotide: translated nucleotide)",
+            "title": "Commands"
+        },
+        {
+            "location": "/tutorial/#arguments",
+            "text": "The pipeline is designed to run with a minimum of three arguments:  * path to sequence data (-s)\n* path to target database (-t)\n* path in which report folder is to be created (-r)  The following command will run geneseekr using BLASTn on the supplied sequences and database  geneseekr blastn -s /path/to/sequences -t /path/to/targets -r /path/to/reports",
+            "title": "Arguments"
+        },
+        {
+            "location": "/tutorial/#optional-arguments",
+            "text": "There are a number of optional arguments than can be supplied to the geneseekr script    Options:\n  -s, --sequencepath TEXT   Specify input fasta folder  [required]\n  -t, --targetpath TEXT     Specify folder of targets  [required]\n  -r, --reportpath TEXT     Specify output folder for csv  [required]\n  -c, --cutoff INTEGER      Minumum sequence identity threshold for a match to\n                            be reported\n  -e, --evalue TEXT         Minimum evalue to use for BLAST analyses\n  -n, --numthreads INTEGER  Specify number of threads\n  -a, --align               Optionally output alignments of genes with less\n                            than 100% identity to reference genes. This\n                            alignment will use amino acid sequences for both\n                            query and reference\n  -u, --unique              Do not report multiple hits at the same location\n                            in a contig. Instead, store the best hit, and\n                            ignore the rest\n  -R, --resfinder           Perform ResFinder-like analyses\n  -V, --virulencefinder     Perform VirulenceFinder-like analyses\n  --version                 Show the version and exit.\n  -h, --help                Show this message and exit.",
+            "title": "Optional Arguments"
+        },
+        {
+            "location": "/tests/",
+            "text": "Tests\n\n\nA test script and test datasets are included in the repository to ensure that installation of the script and dependencies \nwas successful. To run the unit tests (make sure that the geneseekr conda environment is active):\n\n\ncd GeneSeekr/tests\npytest test_resfinder_blastn.py\npytest test_resfinder_tblastx.py\n\n\n\n\nIf any test fails, check the output to see where the issues occurred",
+            "title": "Tests"
+        },
+        {
+            "location": "/tests/#tests",
+            "text": "A test script and test datasets are included in the repository to ensure that installation of the script and dependencies \nwas successful. To run the unit tests (make sure that the geneseekr conda environment is active):  cd GeneSeekr/tests\npytest test_resfinder_blastn.py\npytest test_resfinder_tblastx.py  If any test fails, check the output to see where the issues occurred",
+            "title": "Tests"
+        }
+    ]
+}
