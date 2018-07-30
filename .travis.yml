@@ -13,4 +13,7 @@ before_install:
   
 script:
   - pytest tests/test_resfinder_blastn.py
+  - pytest tests/test_resfinder_blastp.py
+  - pytest tests/test_resfinder_blastx.py
+  - pytest tests/test_resfinder_tblastn.py
   - pytest tests/test_resfinder_tblastx.py
