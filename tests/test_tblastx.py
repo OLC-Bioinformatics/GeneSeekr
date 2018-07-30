@@ -99,7 +99,7 @@ def test_targetfiles():
 
 
 def test_records():
-    assert records[targetfiles[0]]['blaOXA_235_1_JQ820240']
+    assert records[targetfiles[0]]['ampH_2_HQ586946']
 
 
 def test_tblastx():
@@ -173,7 +173,6 @@ def test_report_row():
 
 def test_parse_results():
     for sample in tblastx_method.metadata:
-        print(sample.resfinder.blastresults)
         assert sample.resfinder.blastresults['ampH_2_HQ586946'] == 93.96
 
 

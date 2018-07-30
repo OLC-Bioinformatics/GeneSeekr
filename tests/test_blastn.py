@@ -99,7 +99,7 @@ def test_targetfiles():
 
 
 def test_records():
-    assert records[targetfiles[0]]['blaOXA_235_1_JQ820240']
+    assert records[targetfiles[0]]['blaOXA_427_1_KX827604']
 
 
 def test_blastn():
