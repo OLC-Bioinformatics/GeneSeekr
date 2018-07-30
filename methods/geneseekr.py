@@ -2,7 +2,8 @@
 from accessoryFunctions.accessoryFunctions import run_subprocess, make_path, \
     combinetargets, MetadataObject, GenObject, printtime
 from biotools.bbtools import kwargs_to_string
-from Bio.Blast.Applications import NcbiblastnCommandline, NcbitblastxCommandline
+from Bio.Blast.Applications import NcbiblastnCommandline, NcbiblastxCommandline, NcbiblastpCommandline, \
+    NcbitblastnCommandline, NcbitblastxCommandline
 from Bio.Application import ApplicationError
 from Bio.pairwise2 import format_alignment
 from Bio.SeqRecord import SeqRecord
@@ -109,14 +110,21 @@ class GeneSeekr(object):
             # Split the extension from the file path
             db = os.path.splitext(sample[analysistype].combinedtargets)[0]
             # Create the command line argument using the appropriate BioPython BLAST wrapper
+            blast = str()
             if program == 'blastn':
                 blast = self.blastn_commandline(sample, analysistype, db, evalue, num_alignments, num_threads, outfmt)
             elif program == 'blastp':
-                pass
+                blast = self.blastp_commandline(sample, analysistype, db, evalue, num_alignments, num_threads, outfmt)
+            elif program == 'blastx':
+                blast = self.blastx_commandline(sample, analysistype, db, evalue, num_alignments, num_threads, outfmt)
             elif program == 'tblastn':
-                pass
+                blast = self.tblastn_commandline(sample, analysistype, db, evalue, num_alignments, num_threads, outfmt)
             elif program == 'tblastx':
                 blast = self.tblastx_commandline(sample, analysistype, db, evalue, num_alignments, num_threads, outfmt)
+            else:
+                blast = str()
+            assert blast, 'Something went wrong, the BLAST program you provided ({program}) isn\'t supported'\
+                .format(program=program)
             # Save the blast command in the metadata
             sample[analysistype].blastcommand = str(blast)
             # Only run blast if the report doesn't exist
@@ -145,6 +153,43 @@ class GeneSeekr(object):
                                        outfmt=outfmt,
                                        out=sample[analysistype].report)
         return blastn
+
+    @staticmethod
+    def blastx_commandline(sample, analysistype, db, evalue, num_alignments, num_threads, outfmt):
+        blastx = NcbiblastxCommandline(query=sample.general.bestassemblyfile,
+                                       db=db,
+                                       evalue=evalue,
+                                       num_alignments=num_alignments,
+                                       num_threads=num_threads,
+                                       outfmt=outfmt,
+                                       out=sample[analysistype].report)
+        return blastx
+
+    @staticmethod
+    def blastp_commandline(sample, analysistype, db, evalue, num_alignments, num_threads, outfmt):
+        blastp = NcbiblastpCommandline(query=sample.general.bestassemblyfile,
+                                       db=db,
+                                       evalue=evalue,
+                                       num_alignments=num_alignments,
+                                       num_threads=num_threads,
+                                       outfmt=outfmt,
+                                       out=sample[analysistype].report)
+        return blastp
+
+    @staticmethod
+    def tblastn_commandline(sample, analysistype, db, evalue, num_alignments, num_threads, outfmt):
+        # BLAST command line call. Note the high number of default alignments.
+        # Due to the fact that all the targets are combined into one database, this is to ensure that all potential
+        # alignments are reported. Also note the custom outfmt: the doubled quotes are necessary to get it work
+        tblastn = NcbitblastnCommandline(query=sample.general.bestassemblyfile,
+                                         db=db,
+                                         evalue=evalue,
+                                         num_alignments=num_alignments,
+                                         num_threads=num_threads,
+                                         outfmt=outfmt,
+                                         out=sample[analysistype].report)
+        return tblastn
+
 
     @staticmethod
     def tblastx_commandline(sample, analysistype, db, evalue, num_alignments, num_threads, outfmt):
@@ -181,12 +226,11 @@ class GeneSeekr(object):
             for row in blastdict:
                 # Create the subject length variable - if the sequences are DNA (e.g. blastn), use the subject
                 # length as usual; if the sequences are protein (e.g. tblastx), use the subject length / 3
-                if program == 'blastn':
+                if program == 'blastn' or program == 'blastp' or program == 'blastx':
                     subject_length = float(row['subject_length'])
-                elif program == 'tblastx':
-                    subject_length = float(row['subject_length']) / 3
+
                 else:
-                    subject_length = float(row['subject_length'])
+                    subject_length = float(row['subject_length']) / 3
                 # Calculate the percent identity and extract the bitscore from the row
                 # Percent identity is the (length of the alignment - number of mismatches) / total subject length
                 percentidentity = float('{:0.2f}'.format((float(row['positives']) - float(row['gaps'])) /
@@ -241,12 +285,10 @@ class GeneSeekr(object):
             for row in blastdict:
                 # Create the subject length variable - if the sequences are DNA (e.g. blastn), use the subject
                 # length as usual; if the sequences are protein (e.g. tblastx), use the subject length / 3
-                if program == 'blastn':
+                if program == 'blastn' or program == 'blastp' or program == 'blastx':
                     subject_length = float(row['subject_length'])
-                elif program == 'tblastx':
-                    subject_length = float(row['subject_length']) / 3
                 else:
-                    subject_length = float(row['subject_length'])
+                    subject_length = float(row['subject_length']) / 3
                 # Calculate the percent identity
                 # Percent identity is the (length of the alignment - number of mismatches) / total subject length
                 percentidentity = float('{:0.2f}'.format((float(row['positives'])) / subject_length * 100))
@@ -404,7 +446,8 @@ class GeneSeekr(object):
         # Return the updated metadata object
         return metadata
 
-    def dict_initialise(self, metadata, analysistype):
+    @staticmethod
+    def dict_initialise(metadata, analysistype):
         """
         Initialise dictionaries for storing DNA and amino acid sequences
         :param metadata: Metadata object
@@ -449,6 +492,7 @@ class GeneSeekr(object):
         row = 0
         # A dictionary to store the column widths for every header
         columnwidth = dict()
+        extended = False
         for sample in metadata:
             # Reset the column to zero
             col = 0
@@ -470,27 +514,51 @@ class GeneSeekr(object):
                             if align and sample[analysistype].blastresults[target] != 100.00:
                                 # Align the protein (and nucleotide) sequences to the reference
                                 sample = self.alignprotein(sample, analysistype, target, targetfiles, records, program)
-                                # Add the appropriate headers
-                                headers.extend(['{}_aa_Identity'.format(target),
-                                                '{}_aa_Alignment'.format(target),
-                                                '{}_aa_SNP_location'.format(target),
-                                                '{}_nt_Alignment'.format(target),
-                                                '{}_nt_SNP_location'.format(target)
-                                                ])
+                                if not extended:
+                                    if program == 'blastn':
+                                        # Add the appropriate headers
+                                        headers.extend(['aa_Sequence',
+                                                        'aa_Alignment',
+                                                        'aa_SNP_location',
+                                                        'nt_Alignment',
+                                                        'nt_SNP_location'
+                                                        ])
+                                    else:
+                                        headers.extend(['aa_Sequence',
+                                                        'aa_Alignment',
+                                                        'aa_SNP_location',
+                                                        ])
+                                    extended = True
+                                # Create a FASTA-formatted sequence output of the query sequence
+                                if program == 'blastn':
+                                    record = SeqRecord(sample[analysistype].dnaseq[target],
+                                                       id='{}_{}'.format(sample.name, target),
+                                                       description='')
+                                else:
+                                    record = SeqRecord(sample[analysistype].protseq[target],
+                                                       id='{}_{}'.format(sample.name, target),
+                                                       description='')
+
                                 # Add the alignment, and the location of mismatches for both nucleotide and amino
                                 # acid sequences
-                                data.extend([sample[analysistype].aaidentity[target],
-                                             sample[analysistype].aaalign[target],
-                                             sample[analysistype].aaindex[target],
-                                             sample[analysistype].ntalign[target],
-                                             sample[analysistype].ntindex[target],
-                                             ])
+                                if program == 'blastn':
+                                    data.extend([record.format('fasta'),
+                                                 sample[analysistype].aaalign[target],
+                                                 sample[analysistype].aaindex[target],
+                                                 sample[analysistype].ntalign[target],
+                                                 sample[analysistype].ntindex[target]
+                                                 ])
+                                else:
+                                    data.extend([record.format('fasta'),
+                                                 sample[analysistype].aaalign[target],
+                                                 sample[analysistype].aaindex[target],
+                                                 ])
                         # If there are no blast results for the target, add a '-'
                         except (KeyError, TypeError):
                             data.append('-')
-                        # If there are no blast results at all, add a '-'
-                        else:
-                            data.append('-')
+                # If there are no blast results at all, add a '-'
+                else:
+                    data.append('-')
             # Write the header to the spreadsheet
             for header in headers:
                 worksheet.write(row, col, header, bold)
@@ -810,7 +878,7 @@ class GeneSeekr(object):
             sample[analysistype].protseq[target] = Seq(seq,
                                                        IUPAC.protein)
         for targetfile in targetfiles:
-            if program == 'blastn' or program == 'tblastx':
+            if program == 'blastn' or program == 'tblastn' or program == 'tblastx':
                 # Trim the reference sequence to multiples of three
                 refremainder = 0 - len(records[targetfile][target].seq) % 3
                 refseq = str(records[targetfile][target].seq) if refremainder % 3 == 0 \
@@ -1182,20 +1250,20 @@ def objector(kw_dict, start):
     metadata = MetadataObject()
     for key, value in kw_dict.items():
         setattr(metadata, key, value)
-        # Set the analysis type based on the arguments provided
-        if metadata.resfinder:
-            metadata.analysistype = 'resfinder'
-        elif metadata.virulencefinder:
-            metadata.analysistype = 'virulence'
-        # Warn that only one type of analysis can be perfomed at a time
-        elif metadata.resfinder and metadata.virulencefinder:
-            printtime('Cannot perform ResFinder and VirulenceFinder simultaneously. Please choose only one '
-                      'of the -R and -v flags', start)
-        # Default to geneseekr
-        else:
-            metadata.analysistype = 'geneseekr'
-        # Add the start time variable to the object
-        metadata.start = start
+    # Set the analysis type based on the arguments provided
+    if metadata.resfinder is True:
+        metadata.analysistype = 'resfinder'
+    elif metadata.virulencefinder is True:
+        metadata.analysistype = 'virulence'
+    # Warn that only one type of analysis can be perfomed at a time
+    elif metadata.resfinder is True and metadata.virulencefinder is True:
+        printtime('Cannot perform ResFinder and VirulenceFinder simultaneously. Please choose only one '
+                  'of the -R and -v flags', start)
+    # Default to geneseekr
+    else:
+        metadata.analysistype = 'geneseekr'
+    # Add the start time variable to the object
+    metadata.start = start
     return metadata
 
 
@@ -1216,7 +1284,7 @@ def modify_usage_error(subcommand):
             color = self.ctx.color
         echo('Error: %s\n' % self.format_message(), file=file, color=color)
         # Set the sys.argv to be the first two arguments passed to the script if the subcommand was specified
-        arg2 = sys.argv[1] if sys.argv[1] in ['blastn', 'blastp', 'tblastn', 'tblastx'] else str()
+        arg2 = sys.argv[1] if sys.argv[1] in ['blastn', 'blastp', 'blastx', 'tblastn', 'tblastx'] else str()
         sys.argv = [' '.join([sys.argv[0], arg2])] if arg2 else [sys.argv[0]]
         # Call the help
         subcommand(['--help'])
