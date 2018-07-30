@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
-from accessoryFunctions.accessoryFunctions import MetadataObject, printtime
 from methods.geneseekr import modify_usage_error, objector
 from bin.blastn import BLASTn as run_BLASTn
+from bin.blastp import BLASTp as run_BLASTp
+from bin.blastx import BLASTx as run_BLASTx
+from bin.tblastn import tBLASTn as run_tBLASTn
 from bin.tblastx import tBLASTx as run_tBLASTx
-from argparse import ArgumentParser
 from time import time
 import click
+import sys
 
 start = time()
 
 # https://stackoverflow.com/a/40195800
 click_options = [
+    click.version_option(version='1.0.0'),
     click.option('-s', '--sequencepath',
                  required=True,
                  help='Specify input fasta folder'),
@@ -36,14 +39,16 @@ click_options = [
     click.option('-u', '--unique',
                  is_flag=True,
                  help='Do not report multiple hits at the same location in a contig. Instead, store the '
-                      'best hit, and ignore the rest'),
+                      'best hit, and ignore the rest')
+]
+
+click_nt_options = [
     click.option('-R', '--resfinder',
                  is_flag=True,
                  help='Perform ResFinder-like analyses'),
     click.option('-V', '--virulencefinder',
                  is_flag=True,
-                 help='Perform VirulenceFinder-like analyses'),
-    click.version_option(version='1.0.0')
+                 help='Perform VirulenceFinder-like analyses')
 ]
 
 
@@ -62,7 +67,11 @@ def group():
 
 @group.command()
 @add_options(click_options)
+@add_options(click_nt_options)
 def blastn(**kwargs):
+    """
+    nt query: nt db
+    """
     metadata = objector(kwargs, start)
     metadata.program = 'blastn'
     geneseekr = run_BLASTn(metadata)
@@ -71,18 +80,87 @@ def blastn(**kwargs):
 
 @group.command()
 @add_options(click_options)
+def blastp(**kwargs):
+    """
+    protein query: protein db
+    """
+    metadata = objector(kwargs, start)
+    metadata.program = 'blastp'
+    geneseekr = run_BLASTp(metadata)
+    geneseekr.geneseekr()
+
+
+@group.command()
+@add_options(click_options)
+def blastx(**kwargs):
+    """
+    translated nt query: protein db
+    """
+    metadata = objector(kwargs, start)
+    metadata.program = 'blastx'
+    geneseekr = run_BLASTx(metadata)
+    geneseekr.geneseekr()
+
+
+@group.command()
+@add_options(click_options)
+@add_options(click_nt_options)
+def tblastn(**kwargs):
+    """
+    protein query: translated nt db
+    """
+    metadata = objector(kwargs, start)
+    metadata.program = 'tblastn'
+    geneseekr = run_tBLASTn(metadata)
+    geneseekr.geneseekr()
+
+
+@group.command()
+@add_options(click_options)
+@add_options(click_nt_options)
 def tblastx(**kwargs):
+    """
+    translated nt query: translated nt db
+    """
     metadata = objector(kwargs, start)
     metadata.program = 'tblastx'
     geneseekr = run_tBLASTx(metadata)
     geneseekr.geneseekr()
 
 
+def find_subcommand(subcommand_string):
+    """
+    Associate the appropriate function with the supplied BLAST program to use
+    :param subcommand_string:
+    :return:
+    """
+    if subcommand_string == 'blastn':
+        subcommand = blastn
+    elif subcommand_string == 'blastp':
+        subcommand = blastp
+    elif subcommand_string == 'blastx':
+        subcommand = blastn
+    elif subcommand_string == 'tblastn':
+        subcommand = blastn
+    else:
+        subcommand = tblastx
+    return subcommand
+
+
+# Extract the BLAST command to use from the command line arguments
+try:
+    program = sys.argv[1] if sys.argv[1] in ['blastn', 'blastp', 'blastx', 'tblastn', 'tblastx'] else str()
+except IndexError:
+    program = str()
+
+# Convert the program string to the appropriate subscommand to use when modifying the usage error - ResFinder
+# and VirulenceFinder analyses are only available for BLAST programs that use a nt database
+sub_command = find_subcommand(program)
 # Change the default behaviour of click to print the help menu when a subcommand is specified, but is missing arguments
-# modify_usage_error(tblastx)
+modify_usage_error(sub_command)
 
 if __name__ == '__main__':
-    group(obj={})
+    group()
 
 
 # class PipelineInit(object):
