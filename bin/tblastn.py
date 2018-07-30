@@ -4,7 +4,7 @@ from methods.geneseekr import GeneSeekr, Parser, sequencenames
 import multiprocessing
 
 
-class tBLASTx(object):
+class tBLASTn(object):
 
     def geneseekr(self):
         printtime('Performing {program} analyses on {at} targets'

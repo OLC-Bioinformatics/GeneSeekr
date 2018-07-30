@@ -4,7 +4,7 @@ from methods.geneseekr import GeneSeekr, Parser, sequencenames
 import multiprocessing
 
 
-class tBLASTx(object):
+class BLASTp(object):
 
     def geneseekr(self):
         printtime('Performing {program} analyses on {at} targets'
@@ -17,7 +17,8 @@ class tBLASTx(object):
         printtime('Creating {at} blast databases as required'
                   .format(at=self.analysistype),
                   self.start)
-        geneseekr.makeblastdb(self.combinedtargets)
+        geneseekr.makeblastdb(self.combinedtargets,
+                              dbtype='prot')
         # Populate variables
         self.targetfolders, self.targetfiles, self.records = geneseekr.target_folders(self.metadata,
                                                                                       self.analysistype)
@@ -53,7 +54,6 @@ class tBLASTx(object):
                                                   self.fieldnames,
                                                   self.cutoff,
                                                   self.program)
-
         # Create dictionaries
         self.metadata = geneseekr.dict_initialise(self.metadata,
                                                   self.analysistype)

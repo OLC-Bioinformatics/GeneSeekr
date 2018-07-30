@@ -37,7 +37,7 @@ class BLASTn(object):
                           at=self.analysistype),
                   self.start)
         if self.unique:
-            # Run the unique blastn parsing module
+            # Run the unique blast parsing module
             self.metadata = geneseekr.unique_parse_blast(self.metadata,
                                                          self.analysistype,
                                                          self.fieldnames,
