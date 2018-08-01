@@ -3,16 +3,26 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="GeneSeekr",
+    name="geneseekr",
     version="0.0.1",
     packages=find_packages(),
-    scripts=['methods/geneseekr',
-	     'bin/blastn'],
+    scripts=[
+	'geneseekr/geneseekr',
+	'methods/geneseekr.py',
+	'bin/blastn.py',
+	'bin/blastp.py',
+	'bin/blastx.py',
+	'bin/tblastn.py',
+	'bin/tblastx.py'
+	],
     author="Adam Koziol",
     author_email="adam.koziol@canada.ca",
     url="https://github.com/OLC-Bioinformatics/GeneSeekr",
-    install_requires=['olctools', 
-		      'biopython',
-		      'xlsxwriter
+    install_requires=[
+	'biopython',
+	'click',
+	'numpy',	
+	'olctools', 
+	'xlsxwriter'
 	]
 )
