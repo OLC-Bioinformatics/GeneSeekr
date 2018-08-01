@@ -4,16 +4,10 @@ from setuptools import setup, find_packages
 
 setup(
     name="geneseekr",
-    version="0.0.1",
+    version="0.0.3",
     packages=find_packages(),
     scripts=[
-	'geneseekr/geneseekr',
-	'methods/geneseekr.py',
-	'bin/blastn.py',
-	'bin/blastp.py',
-	'bin/blastx.py',
-	'bin/tblastn.py',
-	'bin/tblastx.py'
+	'geneseekr/geneseekr'
 	],
     author="Adam Koziol",
     author_email="adam.koziol@canada.ca",

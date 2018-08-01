@@ -110,7 +110,6 @@ class GeneSeekr(object):
             # Split the extension from the file path
             db = os.path.splitext(sample[analysistype].combinedtargets)[0]
             # Create the command line argument using the appropriate BioPython BLAST wrapper
-            blast = str()
             if program == 'blastn':
                 blast = self.blastn_commandline(sample, analysistype, db, evalue, num_alignments, num_threads, outfmt)
             elif program == 'blastp':
@@ -189,7 +188,6 @@ class GeneSeekr(object):
                                          outfmt=outfmt,
                                          out=sample[analysistype].report)
         return tblastn
-
 
     @staticmethod
     def tblastx_commandline(sample, analysistype, db, evalue, num_alignments, num_threads, outfmt):
