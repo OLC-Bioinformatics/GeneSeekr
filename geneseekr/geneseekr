@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-from methods.geneseekr import modify_usage_error, objector
-from bin.blastn import BLASTn as run_BLASTn
-from bin.blastp import BLASTp as run_BLASTp
-from bin.blastx import BLASTx as run_BLASTx
-from bin.tblastn import tBLASTn as run_tBLASTn
-from bin.tblastx import tBLASTx as run_tBLASTx
+from geneseekr.geneseekr import modify_usage_error, objector
+from geneseekr.blastn import BLASTn as run_BLASTn
+from geneseekr.blastp import BLASTp as run_BLASTp
+from geneseekr.blastx import BLASTx as run_BLASTx
+from geneseekr.tblastn import tBLASTn as run_tBLASTn
+from geneseekr.tblastx import tBLASTx as run_tBLASTx
 from time import time
 import click
 import sys

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from accessoryFunctions.accessoryFunctions import printtime
-from methods.geneseekr import GeneSeekr, Parser, sequencenames
+from geneseekr.geneseekr import GeneSeekr, Parser, sequencenames
 import multiprocessing
 
 

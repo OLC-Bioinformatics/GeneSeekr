@@ -15,8 +15,8 @@ sys.path.append(method_path)
 bin_path = os.path.join(script_path, 'bin')
 sys.path.append(bin_path)
 
-from methods.geneseekr import GeneSeekr, Parser, sequencenames
-import blastx
+from geneseekr.geneseekr import GeneSeekr, Parser, sequencenames
+import geneseekr.blastx as blastx
 
 __author__ = 'adamkoziol'
 
