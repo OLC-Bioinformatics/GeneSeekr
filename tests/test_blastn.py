@@ -1,22 +1,14 @@
 #!/usr/bin/env python 3
 from accessoryFunctions.accessoryFunctions import MetadataObject
+from geneseekr.geneseekr import GeneSeekr
+import geneseekr.blastn as blastn
 import multiprocessing
 from glob import glob
 from time import time
 import pytest
-import sys
 import os
 
 test_path = os.path.abspath(os.path.dirname(__file__))
-script_path = os.path.join(test_path, '..')
-sys.path.append(script_path)
-method_path = os.path.join(script_path, 'methods')
-sys.path.append(method_path)
-bin_path = os.path.join(script_path, 'bin')
-sys.path.append(bin_path)
-
-from geneseekr.geneseekr import GeneSeekr, Parser, sequencenames
-import geneseekr.blastn as blastn
 
 __author__ = 'adamkoziol'
 

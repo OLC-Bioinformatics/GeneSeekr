@@ -1,0 +1,30 @@
+package:
+  name: geneseekr
+  version: "0.0.4"
+
+source:
+  git_url: https://github.com/OLC-Bioinformatics/GeneSeekr
+
+requirements:
+  build:
+    - python
+    - setuptools
+    - olctools
+    - click
+    - biopython
+    - xlsxwriter
+    - blast
+    - numpy
+  run:
+    - python
+    - olctools
+    - click
+    - biopython
+    - xlsxwriter
+    - blast
+    - numpy
+
+about:
+  home: https://github.com/OLC-Bioinformatics/GeneSeekr
+  license: MIT
+  license_file: LICENSE
