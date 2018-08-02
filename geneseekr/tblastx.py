@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 from accessoryFunctions.accessoryFunctions import printtime
-from geneseekr.geneseekr import GeneSeekr, Parser, sequencenames
-import multiprocessing
+from geneseekr.geneseekr import Fields, GeneSeekr
 
 
-class tBLASTx(object):
+class tBLASTx(Fields):
 
     def geneseekr(self):
         printtime('Performing {program} analyses on {at} targets'
@@ -90,35 +89,5 @@ class tBLASTx(object):
         printtime('{at} analyses complete'.format(at=self.analysistype), self.start)
 
     def __init__(self, args):
-        self.cutoff = args.cutoff
-        # Use the argument for the number of threads to use, or default to the number of cpus in the system
-        self.cpus = args.numthreads if args.numthreads else multiprocessing.cpu_count() - 1
-        self.align = args.align
-        self.resfinder = args.resfinder
-        self.virulencefinder = args.virulencefinder
-        # Automatically set self.unique to true for ResFinder or VirulenceFinder analyses
-        self.unique = True if self.resfinder or self.virulencefinder else args.unique
-        self.analysistype = args.analysistype
-        self.start = args.start
-        self.evalue = args.evalue
-        self.program = args.program
-        # Run the Parser class from the geneseekr methods script to create lists of the database targets, and
-        # combined targets, fasta sequences, and metadata objects.
-        parse = Parser(self, args)
-        parse.strainer()
-        # Extract the variables from the object
-        self.reportpath = parse.reportpath
-        self.targets = parse.targets
-        self.strains = parse.strains
-        self.combinedtargets = parse.combinedtargets
-        self.metadata = parse.metadata
-        # Fields used for custom outfmt 6 BLAST output:
-        self.fieldnames = ['query_id', 'subject_id', 'positives', 'mismatches', 'gaps',
-                           'evalue', 'bit_score', 'subject_length', 'alignment_length',
-                           'query_start', 'query_end', 'query_sequence',
-                           'subject_start', 'subject_end', 'subject_sequence']
-        self.outfmt = "'6 qseqid sseqid positive mismatch gaps " \
-                      "evalue bitscore slen length qstart qend qseq sstart send sseq'"
-        self.targetfolders = set()
-        self.targetfiles = list()
-        self.records = dict()
+        args.program = 'tblastx'
+        super().__init__(args)

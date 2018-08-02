@@ -12,6 +12,7 @@ from Bio import pairwise2
 from Bio.Seq import Seq
 from Bio import SeqIO
 from csv import DictReader
+import multiprocessing
 from glob import glob
 import xlsxwriter
 import csv
@@ -20,6 +21,86 @@ import os
 import re
 
 __author__ = 'adamkoziol'
+
+
+class Fields(object):
+    """
+    Class for creating class variables for the blast suite of tools
+    """
+
+    def __init__(self, args, analysistype='geneseekr'):
+        self.program = args.program
+        try:
+            self.cutoff = args.cutoff
+        except AttributeError:
+            self.cutoff = 70
+        try:
+            self.cpus = args.numthreads if args.numthreads else multiprocessing.cpu_count() - 1
+        except AttributeError:
+            self.cpus = args.cpus
+        try:
+            self.align = args.align
+        except AttributeError:
+            self.align = True
+        try:
+            self.analysistype = args.analysistype
+        except AttributeError:
+            self.analysistype = analysistype
+            args.analysistype = analysistype
+        try:
+            self.resfinder = args.resfinder
+        except AttributeError:
+            self.resfinder = False
+        try:
+            self.virulencefinder = args.virulencefinder
+        except AttributeError:
+            self.virulencefinder = False
+        # Automatically set self.unique to true for ResFinder or VirulenceFinder analyses
+        self.unique = True if self.resfinder or self.virulencefinder or 'resfinder' in self.analysistype \
+            or self.analysistype == 'virulencefinder' else args.unique
+        try:
+            self.start = args.start
+        except AttributeError:
+            self.start = args.starttime
+        try:
+            self.evalue = args.evalue
+        except AttributeError:
+            self.evalue = '1E-05'
+        try:
+            self.sequencepath = args.sequencepath
+        except AttributeError:
+            self.sequencepath = str()
+        try:
+            self.targetpath = os.path.join(args.reffilepath,  self.analysistype)
+        except (AttributeError, KeyError):
+            self.targetpath = args.targetpath
+        self.reportpath = args.reportpath
+        try:
+            self.metadata = args.runmetadata.samples
+            parse = Parser(self)
+            parse.target_find()
+            parse.metadata_populate()
+        except (AttributeError, KeyError):
+            # Run the Parser class from the GeneSeekr methods script to create lists of the database targets, and
+            # combined targets, fasta sequences, and metadata objects.
+            parse = Parser(self)
+            parse.main()
+        # Extract the variables from the object
+        self.reportpath = parse.reportpath
+        self.targets = parse.targets
+        self.strains = parse.strains
+        self.combinedtargets = parse.combinedtargets
+        self.metadata = parse.metadata
+        # Fields used for custom outfmt 6 BLAST output:
+        self.fieldnames = ['query_id', 'subject_id', 'positives', 'mismatches', 'gaps',
+                           'evalue', 'bit_score', 'subject_length', 'alignment_length',
+                           'query_start', 'query_end', 'query_sequence',
+                           'subject_start', 'subject_end', 'subject_sequence']
+        self.outfmt = "'6 qseqid sseqid positive mismatch gaps " \
+                      "evalue bitscore slen length qstart qend qseq sstart send sseq'"
+        self.targetfolders = set()
+        self.targetfiles = list()
+        self.records = dict()
 
 
 class GeneSeekr(object):
@@ -979,23 +1060,41 @@ class GeneSeekr(object):
 
 class Parser(object):
 
-    def strainer(self):
-        # Get the sequences in the sequences folder into a list. Note that they must have a file extension that
-        # begins with .fa
-        self.strains = sorted(glob(os.path.join(self.sequencepath, '*.fa*'.format(self.sequencepath))))
+    def main(self):
+        """
+
+        """
+        self.target_find()
+        self.strainer()
+        self.metadata_populate()
+
+    def target_find(self):
+        """
+
+        """
         self.targets = sorted(glob(os.path.join(self.targetpath, '*.tfa')))
         try:
             self.combinedtargets = glob(os.path.join(self.targetpath, '*.fasta'))[0]
         except IndexError:
             combinetargets(self.targets, self.targetpath)
             self.combinedtargets = glob(os.path.join(self.targetpath, '*.fasta'))[0]
+        assert self.targets, 'Could not find any files with an extension starting with "fa" in {}. Please check' \
+                             'to ensure that your target path is correct'.format(self.targetpath)
+
+    def strainer(self):
+        """
+
+        """
+        assert os.path.isdir(self.sequencepath), 'Cannot locate sequence path as specified: {}' \
+            .format(self.sequencepath)
+        # Get the sequences in the sequences folder into a list. Note that they must have a file extension that
+        # begins with .fa
+        self.strains = sorted(glob(os.path.join(self.sequencepath, '*.fa*'.format(self.sequencepath))))
         # Populate the metadata object. This object will be populated to mirror the objects created in the
         # genome assembly pipeline. This way this script will be able to be used as a stand-alone, or as part
         # of a pipeline
         assert self.strains, 'Could not find any files with an extension starting with "fa" in {}. Please check' \
                              'to ensure that your sequence path is correct'.format(self.sequencepath)
-        assert self.targets, 'Could not find any files with an extension starting with "fa" in {}. Please check' \
-                             'to ensure that your target path is correct'.format(self.targetpath)
         for sample in self.strains:
             # Create the object
             metadata = MetadataObject()
@@ -1005,23 +1104,28 @@ class Parser(object):
             metadata.name = filename
             # Create the .general attribute
             metadata.general = GenObject()
-            # Create the .mlst attribute
-            setattr(metadata, self.analysistype, GenObject())
             # Set the .general.bestassembly file to be the name and path of the sequence file
             metadata.general.bestassemblyfile = sample
+            # Append the metadata for each sample to the list of samples
+            self.metadata.append(metadata)
+
+    def metadata_populate(self):
+        """
+        Populate the :analysistype GenObject
+        """
+        for metadata in self.metadata:
+            # Create the :analysistype attribute
+            setattr(metadata, self.analysistype, GenObject())
+
             metadata[self.analysistype].targets = self.targets
             metadata[self.analysistype].combinedtargets = self.combinedtargets
             metadata[self.analysistype].targetpath = self.targetpath
             metadata[self.analysistype].targetnames = sequencenames(self.combinedtargets)
             metadata[self.analysistype].reportdir = self.reportpath
-            # Append the metadata for each sample to the list of samples
-            self.metadata.append(metadata)
 
-    def __init__(self, inputobject, args):
-        self.analysistype = inputobject.analysistype
+    def __init__(self, args):
+        self.analysistype = args.analysistype
         self.sequencepath = os.path.join(args.sequencepath)
-        assert os.path.isdir(self.sequencepath), 'Cannot locate sequence path as specified: {}' \
-            .format(self.sequencepath)
         self.targetpath = os.path.join(args.targetpath)
         assert os.path.isdir(self.targetpath), 'Cannot locate target path as specified: {}' \
             .format(self.targetpath)
@@ -1030,7 +1134,10 @@ class Parser(object):
         assert os.path.isdir(self.reportpath), 'Cannot locate report path as specified: {}' \
             .format(self.reportpath)
         self.logfile = os.path.join(self.sequencepath, 'log.txt')
-        self.metadata = list()
+        try:
+            self.metadata = args.metadata
+        except AttributeError:
+            self.metadata = list()
         self.strains = list()
         self.targets = list()
         self.combinedtargets = list()
@@ -1257,7 +1364,7 @@ def objector(kw_dict, start):
     elif metadata.resfinder is True and metadata.virulencefinder is True:
         printtime('Cannot perform ResFinder and VirulenceFinder simultaneously. Please choose only one '
                   'of the -R and -v flags', start)
-    # Default to geneseekr
+    # Default to GeneSeekr
     else:
         metadata.analysistype = 'geneseekr'
     # Add the start time variable to the object
