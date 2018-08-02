@@ -1114,14 +1114,18 @@ class Parser(object):
         Populate the :analysistype GenObject
         """
         for metadata in self.metadata:
-            # Create the :analysistype attribute
+            # Create and populate the :analysistype attribute
             setattr(metadata, self.analysistype, GenObject())
 
             metadata[self.analysistype].targets = self.targets
             metadata[self.analysistype].combinedtargets = self.combinedtargets
             metadata[self.analysistype].targetpath = self.targetpath
             metadata[self.analysistype].targetnames = sequencenames(self.combinedtargets)
-            metadata[self.analysistype].reportdir = self.reportpath
+            try:
+                metadata[self.analysistype] = os.path.join(metadata.general.outputdirectory,
+                                                           self.analysistype)
+            except AttributeError:
+                metadata[self.analysistype].reportdir = self.reportpath
 
     def __init__(self, args):
         self.analysistype = args.analysistype
