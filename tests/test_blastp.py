@@ -184,3 +184,7 @@ def test_remove_blastp_report():
 
 def test_remove_geneseekr_report():
     os.remove(geneseekr_report)
+
+
+def test_remove_report_path():
+    os.rmdir(blastp_method.reportpath)

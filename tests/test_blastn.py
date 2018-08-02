@@ -188,3 +188,7 @@ def test_remove_blastn_report():
 
 def test_remove_geneseekr_report():
     os.remove(geneseekr_report)
+
+
+def test_remove_report_path():
+    os.rmdir(blastn_method.reportpath)
