@@ -3,11 +3,11 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="geneseekr",
-    version="0.0.4",
+    name="GeneSeekr",
+    version="0.0.5",
     packages=find_packages(),
     scripts=[
-	'geneseekr/geneseekr'
+	'GeneSeekr'
 	],
     author="Adam Koziol",
     author_email="adam.koziol@canada.ca",
