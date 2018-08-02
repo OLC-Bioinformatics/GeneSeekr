@@ -88,6 +88,6 @@ class tBLASTx(Fields):
             delattr(sample[self.analysistype], "targets")
         printtime('{at} analyses complete'.format(at=self.analysistype), self.start)
 
-    def __init__(self, args):
+    def __init__(self, args, analysistype='geneseekr'):
         args.program = 'tblastx'
-        super().__init__(args)
+        super().__init__(args, analysistype)
