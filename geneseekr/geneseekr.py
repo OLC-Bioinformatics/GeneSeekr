@@ -23,101 +23,26 @@ import re
 __author__ = 'adamkoziol'
 
 
-class Fields(object):
-    """
-    Class for creating class variables for the blast suite of tools
-    """
-
-    def __init__(self, args, analysistype='geneseekr'):
-        self.program = args.program
-        try:
-            self.cutoff = args.cutoff
-        except AttributeError:
-            self.cutoff = 70
-        try:
-            self.cpus = args.numthreads if args.numthreads else multiprocessing.cpu_count() - 1
-        except AttributeError:
-            self.cpus = args.cpus
-        try:
-            self.align = args.align
-        except AttributeError:
-            self.align = True
-        try:
-            self.analysistype = args.analysistype
-        except AttributeError:
-            self.analysistype = analysistype
-            args.analysistype = analysistype
-        try:
-            self.resfinder = args.resfinder
-        except AttributeError:
-            self.resfinder = False
-        try:
-            self.virulencefinder = args.virulencefinder
-        except AttributeError:
-            self.virulencefinder = False
-        # Automatically set self.unique to true for ResFinder or VirulenceFinder analyses
-        self.unique = True if self.resfinder or self.virulencefinder or 'resfinder' in self.analysistype \
-            or self.analysistype == 'virulencefinder' else args.unique
-        try:
-            self.start = args.start
-        except AttributeError:
-            self.start = args.starttime
-        try:
-            self.evalue = args.evalue
-        except AttributeError:
-            self.evalue = '1E-05'
-        try:
-            self.sequencepath = args.sequencepath
-        except AttributeError:
-            self.sequencepath = str()
-        try:
-            self.targetpath = os.path.join(args.reffilepath,  self.analysistype)
-        except (AttributeError, KeyError):
-            self.targetpath = args.targetpath
-        self.reportpath = args.reportpath
-        try:
-            self.metadata = args.runmetadata.samples
-            parse = Parser(self)
-            parse.target_find()
-            parse.metadata_populate()
-        except (AttributeError, KeyError):
-            # Run the Parser class from the GeneSeekr methods script to create lists of the database targets, and
-            # combined targets, fasta sequences, and metadata objects.
-            parse = Parser(self)
-            parse.main()
-        # Extract the variables from the object
-        self.reportpath = parse.reportpath
-        self.targets = parse.targets
-        self.strains = parse.strains
-        self.combinedtargets = parse.combinedtargets
-        self.metadata = parse.metadata
-        # Fields used for custom outfmt 6 BLAST output:
-        self.fieldnames = ['query_id', 'subject_id', 'positives', 'mismatches', 'gaps',
-                           'evalue', 'bit_score', 'subject_length', 'alignment_length',
-                           'query_start', 'query_end', 'query_sequence',
-                           'subject_start', 'subject_end', 'subject_sequence']
-        self.outfmt = "'6 qseqid sseqid positive mismatch gaps " \
-                      "evalue bitscore slen length qstart qend qseq sstart send sseq'"
-        self.targetfolders = set()
-        self.targetfiles = list()
-        self.records = dict()
-
-
 class GeneSeekr(object):
 
     @staticmethod
-    def makeblastdb(fasta, dbtype='nucl', returncmd=False, **kwargs):
+    def makeblastdb(fasta, program='blastn', returncmd=False, **kwargs):
         """
         Wrapper for makeblastdb. Assumes that makeblastdb is an executable in your $PATH
         Makes blast database files from targets as necessary
         :param fasta: Input FASTA-formatted file
-        :param dbtype: Database type to create [nucl/prot]
+        :param program: BLAST program used
         :param returncmd: Boolean for if the makeblastdb command should be returned
         :param kwargs: Dictionary of optional arguments
         :return: Stdout, Stderr, makeblastdb command (if requested)
         """
         # Convert the options dictionary to a string
         options = kwargs_to_string(kwargs)
+        # Set the dbtype appropriately
+        if program == 'blastn' or program == 'tblastn' or program == 'tblastx':
+            dbtype = 'nucl'
+        else:
+            dbtype = 'prot'
         # Remove the file extension from the file name
         output = os.path.splitext(fasta)[0]
         cmd = 'makeblastdb -in {fasta} -parse_seqids -max_file_sz 2GB -dbtype {dbtype} -out {output}{options}' \
@@ -731,6 +656,7 @@ class GeneSeekr(object):
         headers.append('nt_sequence') if program == 'blastn' else headers.append('aa_sequence')
         for sample in metadata:
             sample[analysistype].sampledata = list()
+            sample[analysistype].pipelineresults = list()
             # Process the sample only if the script could find targets
             if sample[analysistype].blastlist != 'NA' and sample[analysistype].blastlist:
                 for result in sample[analysistype].blastlist:
@@ -752,6 +678,11 @@ class GeneSeekr(object):
                     data.append(result['alignment_fraction'])
                     data.append(result['query_id'])
                     data.append('...'.join([str(result['low']), str(result['high'])]))
+                    # Populate the .pipelineresults attribute for compatibility with the assembly pipeline
+                    sample[analysistype].pipelineresults.append(
+                        '{rgene} ({pid}%) {rclass}'.format(rgene=finalgene,
+                                                           pid=percentid,
+                                                           rclass=resistance))
                     try:
                         # Only if the alignment option is selected, for inexact results, add alignments
                         if align and percentid != 100.00:
@@ -931,13 +862,13 @@ class GeneSeekr(object):
     def alignprotein(self, sample, analysistype, target, targetfiles, records, program):
         """
         Create alignments of the sample nucleotide and amino acid sequences to the reference sequences
-        :param sample:
-        :param analysistype:
-        :param target:
-        :param targetfiles:
-        :param records:
+        :param sample: Metadata object
+        :param analysistype: Current analysis type
+        :param target: Current gene name
+        :param targetfiles: List of all database files used in the analysis
+        :param records: dictionary of Seq objects for all sequences in each database file
         :param program BLAST program used in the analyses
-        :return:
+        :return: updated sample object
         """
         # Remove any gaps incorporated into the sequence
         sample[analysistype].targetsequence[target] = \
@@ -1057,12 +988,37 @@ class GeneSeekr(object):
         # Return the properly formatted string
         return blaststring
 
+    @staticmethod
+    def clean_object(metadata, analysistype):
+        """
+        Remove certain attributes from the object; they take up too much room on the .json report
+        :param metadata: Metadata object
+        :param analysistype: Current analysis type
+        """
+        for sample in metadata:
+            try:
+                delattr(sample[analysistype], "targetnames")
+            except KeyError:
+                pass
+            try:
+                delattr(sample[analysistype], "targets")
+            except KeyError:
+                pass
+            try:
+                delattr(sample[analysistype], "dnaseq")
+            except KeyError:
+                pass
+            try:
+                delattr(sample[analysistype], "protseq")
+            except KeyError:
+                pass
+
 
 class Parser(object):
 
     def main(self):
         """
-
+        Run the parsing methods
         """
         self.target_find()
         self.strainer()
@@ -1070,7 +1026,8 @@ class Parser(object):
 
     def target_find(self):
         """
-
+        Locate all .tfa FASTA files in the supplied target path. If the combinedtargets.fasta file
+        does not exist, run the combine targets method
         """
         self.targets = sorted(glob(os.path.join(self.targetpath, '*.tfa')))
         try:
@@ -1083,7 +1040,8 @@ class Parser(object):
 
     def strainer(self):
         """
-
+        Locate all the FASTA files in the supplied sequence path. Create basic metadata objects for
+        each sample
         """
         assert os.path.isdir(self.sequencepath), 'Cannot locate sequence path as specified: {}' \
             .format(self.sequencepath)
@@ -1123,14 +1081,16 @@ class Parser(object):
             metadata[self.analysistype].targetnames = sequencenames(self.combinedtargets)
             try:
                 metadata[self.analysistype].reportdir = os.path.join(metadata.general.outputdirectory,
-                                                           self.analysistype)
-            except AttributeError:
+                                                                     self.analysistype)
+            except (AttributeError, KeyError):
                 metadata[self.analysistype].reportdir = self.reportpath
 
     def __init__(self, args):
         self.analysistype = args.analysistype
         self.sequencepath = os.path.join(args.sequencepath)
         self.targetpath = os.path.join(args.targetpath)
+        if not os.path.isdir(self.targetpath):
+            self.targetpath = self.targetpath.split('_')[0]
         assert os.path.isdir(self.targetpath), 'Cannot locate target path as specified: {}' \
             .format(self.targetpath)
         self.reportpath = os.path.join(args.reportpath)
@@ -1376,6 +1336,7 @@ def objector(kw_dict, start):
     return metadata
 
 
+# noinspection PyProtectedMember
 def modify_usage_error(subcommand):
     """
     Method to append the help menu to a modified usage error when a subcommand is specified, but options are missing
@@ -1399,3 +1360,200 @@ def modify_usage_error(subcommand):
         subcommand(['--help'])
 
     click.exceptions.UsageError.show = show
+
+
+class BLAST(object):
+
+    def seekr(self):
+        """
+        Run the methods in the proper order
+        """
+        self.blast_db()
+        self.run_blast()
+        self.parse_results()
+        self.create_reports()
+        self.clean_object()
+        printtime('{at} analyses complete'.format(at=self.analysistype), self.start)
+
+    def blast_db(self):
+        """
+        Make blast databases (if necessary)
+        """
+        printtime('Creating {at} blast databases as required'
+                  .format(at=self.analysistype),
+                  self.start)
+        self.geneseekr.makeblastdb(self.combinedtargets,
+                                   self.program)
+        self.targetfolders, self.targetfiles, self.records = \
+            self.geneseekr.target_folders(self.metadata,
+                                          self.analysistype)
+
+    def run_blast(self):
+        """
+        Perform BLAST analyses
+        """
+        printtime('Performing {program} analyses on {at} targets'
+                  .format(program=self.program,
+                          at=self.analysistype),
+                  self.start)
+        self.metadata = self.geneseekr.run_blast(self.metadata,
+                                                 self.analysistype,
+                                                 self.program,
+                                                 self.outfmt,
+                                                 evalue=self.evalue,
+                                                 num_threads=self.cpus)
+
+    def parse_results(self):
+        """
+        Parse the output depending on whether unique results are desired
+        """
+        printtime('Parsing {program} results for {at} targets'
+                  .format(program=self.program,
+                          at=self.analysistype),
+                  self.start)
+        if self.unique:
+            # Run the unique blast parsing module
+            self.metadata = self.geneseekr.unique_parse_blast(self.metadata,
+                                                              self.analysistype,
+                                                              self.fieldnames,
+                                                              self.cutoff,
+                                                              self.program)
+            # Filter the unique hits
+            self.metadata = self.geneseekr.filter_unique(self.metadata,
+                                                         self.analysistype)
+        else:
+            # Run the standard blast parsing module
+            self.metadata = self.geneseekr.parse_blast(self.metadata,
+                                                       self.analysistype,
+                                                       self.fieldnames,
+                                                       self.cutoff,
+                                                       self.program)
+
+    def create_reports(self):
+        """
+        Create reports
+        """
+        # Create dictionaries
+        self.metadata = self.geneseekr.dict_initialise(self.metadata,
+                                                       self.analysistype)
+        # Create reports
+        printtime('Creating {at} reports'.format(at=self.analysistype), self.start)
+        if 'resfinder' in self.analysistype:
+            # ResFinder-specific report
+            self.metadata = self.geneseekr.resfinder_reporter(self.metadata,
+                                                              self.analysistype,
+                                                              self.targetfolders,
+                                                              self.reportpath,
+                                                              self.align,
+                                                              self.targetfiles,
+                                                              self.records,
+                                                              self.program)
+        elif 'virulence' in self.analysistype:
+            # VirulenceFinder-specific report
+            self.geneseekr.virulencefinder_reporter(self.metadata,
+                                                    self.analysistype,
+                                                    self.reportpath)
+        else:
+            # GeneSeekr-specific report
+            self.metadata = self.geneseekr.reporter(self.metadata,
+                                                    self.analysistype,
+                                                    self.reportpath,
+                                                    self.align,
+                                                    self.targetfiles,
+                                                    self.records,
+                                                    self.program)
+
+    # noinspection PyNoneFunctionAssignment
+    def clean_object(self):
+        """
+        Remove certain attributes from the object; they take up too much room on the .json report
+        """
+        self.metadata = self.geneseekr.clean_object(self.metadata,
+                                                    self.analysistype)
+
+    def __init__(self, args, analysistype='geneseekr', cutoff=70, program='blastn'):
+        try:
+            args.program = args.program
+        except AttributeError:
+            args.program = program
+        self.program = args.program
+        try:
+            self.cutoff = args.cutoff
+        except AttributeError:
+            self.cutoff = cutoff
+        try:
+            self.cpus = args.numthreads if args.numthreads else multiprocessing.cpu_count() - 1
+        except AttributeError:
+            self.cpus = args.cpus
+        try:
+            self.align = args.align
+        except AttributeError:
+            self.align = True
+        if analysistype == 'geneseekr':
+            try:
+                self.analysistype = args.analysistype
+            except AttributeError:
+                self.analysistype = analysistype
+                args.analysistype = analysistype
+        else:
+            self.analysistype = analysistype
+        try:
+            self.resfinder = args.resfinder
+        except AttributeError:
+            self.resfinder = False
+        try:
+            self.virulencefinder = args.virulencefinder
+        except AttributeError:
+            self.virulencefinder = False
+        # Automatically set self.unique to true for ResFinder or VirulenceFinder analyses
+        self.unique = True if self.resfinder or self.virulencefinder or 'resfinder' in self.analysistype \
+            or self.analysistype == 'virulencefinder' else args.unique
+        try:
+            self.start = args.start
+        except AttributeError:
+            self.start = args.starttime
+        try:
+            self.evalue = args.evalue
+        except AttributeError:
+            self.evalue = '1E-05'
+        try:
+            self.sequencepath = args.sequencepath
+        except AttributeError:
+            self.sequencepath = str()
+        try:
+            self.targetpath = os.path.join(args.reffilepath, self.analysistype)
+        except (AttributeError, KeyError):
+            self.targetpath = args.targetpath
+        self.reportpath = args.reportpath
+        try:
+            self.metadata = args.runmetadata.samples
+            parse = Parser(self)
+            parse.target_find()
+            parse.metadata_populate()
+        except (AttributeError, KeyError):
+            # Run the Parser class from the GeneSeekr methods script to create lists of the database targets, and
+            # combined targets, fasta sequences, and metadata objects.
+            parse = Parser(self)
+            parse.main()
+        # Extract the variables from the object
+        self.reportpath = parse.reportpath
+        self.targets = parse.targets
+        self.strains = parse.strains
+        self.combinedtargets = parse.combinedtargets
+        self.metadata = parse.metadata
+        # Fields used for custom outfmt 6 BLAST output:
+        self.fieldnames = ['query_id', 'subject_id', 'positives', 'mismatches', 'gaps',
+                           'evalue', 'bit_score', 'subject_length', 'alignment_length',
+                           'query_start', 'query_end', 'query_sequence',
+                           'subject_start', 'subject_end', 'subject_sequence']
+        self.outfmt = "'6 qseqid sseqid positive mismatch gaps " \
+                      "evalue bitscore slen length qstart qend qseq sstart send sseq'"
+        self.targetfolders = set()
+        self.targetfiles = list()
+        self.records = dict()
+        # Create the GeneSeekr object
+        self.geneseekr = GeneSeekr()
+        printtime('Performing {program} analyses on {at} targets'
+                  .format(program=self.program,
+                          at=self.analysistype),
+                  self.start)
