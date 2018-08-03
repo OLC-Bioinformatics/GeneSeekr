@@ -1,7 +1,6 @@
 #!/usr/bin/env python 3
 from accessoryFunctions.accessoryFunctions import MetadataObject
-from geneseekr.geneseekr import GeneSeekr
-import geneseekr.blastp as blastp
+from geneseekr.geneseekr import BLAST, GeneSeekr
 import multiprocessing
 from glob import glob
 from time import time
@@ -37,17 +36,17 @@ def variable_update():
 
 
 @pytest.fixture()
-def method_init(variables, analysistype, program, align, unique, dest):
+def method_init(variables, analysistype, program, align, unique):
     global method
     variables.analysistype = analysistype
     variables.program = program
     variables.align = align
     variables.unique = unique
-    method = dest(variables)
+    method = BLAST(variables)
     return method
 
 
-blastp_method = method_init(variables(), 'geneseekr', 'blastp', True, True, blastp.BLASTp)
+blastp_method = method_init(variables(), 'geneseekr', 'blastp', True, True)
 
 
 def test_parser():
@@ -70,7 +69,7 @@ def test_makeblastdb(variables):
     global geneseekr
     geneseekr = GeneSeekr()
     geneseekr.makeblastdb(blastp_method.combinedtargets,
-                          dbtype='prot')
+                          blastp_method.program)
     assert os.path.isfile(os.path.join(variables.targetpath, 'combinedtargets.psq'))
 
 

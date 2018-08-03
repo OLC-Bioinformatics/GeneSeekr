@@ -1,7 +1,6 @@
 #!/usr/bin/env python 3
 from accessoryFunctions.accessoryFunctions import MetadataObject
-from geneseekr.geneseekr import GeneSeekr
-import geneseekr.tblastn as tblastn
+from geneseekr.geneseekr import BLAST, GeneSeekr
 import multiprocessing
 from glob import glob
 from time import time
@@ -37,17 +36,17 @@ def variable_update():
 
 
 @pytest.fixture()
-def method_init(variables, analysistype, program, align, unique, dest):
+def method_init(variables, analysistype, program, align, unique):
     global method
     variables.analysistype = analysistype
     variables.program = program
     variables.align = align
     variables.unique = unique
-    method = dest(variables)
+    method = BLAST(variables)
     return method
 
 
-tblastn_method = method_init(variables(), 'resfinder', 'tblastn', True, True, tblastn.tBLASTn)
+tblastn_method = method_init(variables(), 'resfinder', 'tblastn', True, True)
 
 
 def test_parser():
@@ -69,7 +68,8 @@ def test_strain():
 def test_makeblastdb(variables):
     global geneseekr
     geneseekr = GeneSeekr()
-    geneseekr.makeblastdb(tblastn_method.combinedtargets)
+    geneseekr.makeblastdb(tblastn_method.combinedtargets,
+                          tblastn_method.program)
     assert os.path.isfile(os.path.join(variables.targetpath, 'combinedtargets.nsq'))
 
 
@@ -189,6 +189,7 @@ def test_remove_tblastn_report():
 
 def test_remove_geneseekr_report():
     os.remove(geneseekr_report)
+
 
 def test_remove_report_path():
     os.rmdir(tblastn_method.reportpath)
