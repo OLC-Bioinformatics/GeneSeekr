@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-from geneseekr.geneseekr import modify_usage_error, objector
-from geneseekr.blastn import BLASTn as run_BLASTn
-from geneseekr.blastp import BLASTp as run_BLASTp
-from geneseekr.blastx import BLASTx as run_BLASTx
-from geneseekr.tblastn import tBLASTn as run_tBLASTn
-from geneseekr.tblastx import tBLASTx as run_tBLASTx
+from geneseekr.geneseekr import modify_usage_error, objector, BLAST
 from time import time
 import click
 import sys
@@ -75,8 +70,8 @@ def blastn(**kwargs):
     """
     metadata = objector(kwargs, start)
     metadata.program = 'blastn'
-    geneseekr = run_BLASTn(metadata)
-    geneseekr.geneseekr()
+    geneseekr = BLAST(metadata)
+    geneseekr.seekr()
 
 
 @group.command()
@@ -87,8 +82,8 @@ def blastp(**kwargs):
     """
     metadata = objector(kwargs, start)
     metadata.program = 'blastp'
-    geneseekr = run_BLASTp(metadata)
-    geneseekr.geneseekr()
+    geneseekr = BLAST(metadata)
+    geneseekr.seekr()
 
 
 @group.command()
@@ -99,8 +94,8 @@ def blastx(**kwargs):
     """
     metadata = objector(kwargs, start)
     metadata.program = 'blastx'
-    geneseekr = run_BLASTx(metadata)
-    geneseekr.geneseekr()
+    geneseekr = BLAST(metadata)
+    geneseekr.seekr()
 
 
 @group.command()
@@ -112,8 +107,8 @@ def tblastn(**kwargs):
     """
     metadata = objector(kwargs, start)
     metadata.program = 'tblastn'
-    geneseekr = run_tBLASTn(metadata)
-    geneseekr.geneseekr()
+    geneseekr = BLAST(metadata)
+    geneseekr.seekr()
 
 
 @group.command()
@@ -125,8 +120,8 @@ def tblastx(**kwargs):
     """
     metadata = objector(kwargs, start)
     metadata.program = 'tblastx'
-    geneseekr = run_tBLASTx(metadata)
-    geneseekr.geneseekr()
+    geneseekr = BLAST(metadata)
+    geneseekr.seekr()
 
 
 def find_subcommand(subcommand_string):
