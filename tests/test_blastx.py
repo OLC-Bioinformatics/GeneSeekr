@@ -150,10 +150,16 @@ def test_report_creation():
                                                 blastx_method.program)
 
 
-def test_report_existance():
-    global geneseekr_report
-    geneseekr_report = os.path.join(blastx_method.reportpath, 'geneseekr_blastx.xlsx')
-    assert os.path.isfile(geneseekr_report)
+def test_report_csv():
+    global geneseekr_csv
+    geneseekr_csv = os.path.join(blastx_method.reportpath, 'geneseekr_blastx.csv')
+    assert os.path.isfile(geneseekr_csv)
+
+
+def test_report_xls():
+    global geneseekr_xls
+    geneseekr_xls = os.path.join(blastx_method.reportpath, 'geneseekr_blastx.xlsx')
+    assert os.path.isfile(geneseekr_xls)
 
 
 def test_parse_results():
@@ -181,8 +187,12 @@ def test_remove_blastx_report():
     os.remove(blastx_report)
 
 
-def test_remove_geneseekr_report():
-    os.remove(geneseekr_report)
+def test_remove_geneseekr_csv():
+    os.remove(geneseekr_csv)
+
+
+def test_remove_geneseekr_xls():
+    os.remove(geneseekr_xls)
 
 
 def test_remove_report_path():
