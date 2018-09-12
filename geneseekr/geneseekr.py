@@ -1020,23 +1020,10 @@ class Parser(object):
         """
         Run the parsing methods
         """
-        self.target_find()
-        self.strainer()
+        if not self.genus_specific:
+            self.target_find()
+            self.strainer()
         self.metadata_populate()
-
-    def target_find(self):
-        """
-        Locate all .tfa FASTA files in the supplied target path. If the combinedtargets.fasta file
-        does not exist, run the combine targets method
-        """
-        self.targets = sorted(glob(os.path.join(self.targetpath, '*.tfa')))
-        try:
-            self.combinedtargets = glob(os.path.join(self.targetpath, '*.fasta'))[0]
-        except IndexError:
-            combinetargets(self.targets, self.targetpath)
-            self.combinedtargets = glob(os.path.join(self.targetpath, '*.fasta'))[0]
-        assert self.targets, 'Could not find any files with an extension starting with "fa" in {}. Please check' \
-                             'to ensure that your target path is correct'.format(self.targetpath)
 
     def strainer(self):
         """
@@ -1067,6 +1054,38 @@ class Parser(object):
             # Append the metadata for each sample to the list of samples
             self.metadata.append(metadata)
 
+    def target_find(self):
+        """
+        Locate all .tfa FASTA files in the supplied target path. If the combinedtargets.fasta file
+        does not exist, run the combine targets method
+        """
+        self.targets = sorted(glob(os.path.join(self.targetpath, '*.tfa')))
+        try:
+            self.combinedtargets = glob(os.path.join(self.targetpath, '*.fasta'))[0]
+        except IndexError:
+            combinetargets(self.targets, self.targetpath)
+            self.combinedtargets = glob(os.path.join(self.targetpath, '*.fasta'))[0]
+        assert self.targets, 'Could not find any files with an extension starting with "fa" in {}. Please check' \
+                             'to ensure that your target path is correct'.format(self.targetpath)
+
+    def genus_targets(self, metadata):
+        """
+
+
+        """
+        metadata[self.analysistype].targetpath = os.path.join(self.targetpath, metadata.general.referencegenus)
+        metadata[self.analysistype].targets = \
+            sorted(glob(os.path.join(metadata[self.analysistype].targetpath, '*.tfa')))
+        metadata[self.analysistype].combinedtargets = self.combinedtargets
+        try:
+            metadata[self.analysistype].combinedtargets = \
+                glob(os.path.join(metadata[self.analysistype].targetpath, '*.fasta'))[0]
+        except IndexError:
+            combinetargets(self.targets, self.targetpath)
+            metadata[self.analysistype].combinedtargets = \
+                glob(os.path.join(metadata[self.analysistype].targetpath, '*.fasta'))[0]
+        metadata[self.analysistype].targetnames = metadata[self.analysistype].combinedtargets
+
     def metadata_populate(self):
         """
         Populate the :analysistype GenObject
@@ -1074,11 +1093,13 @@ class Parser(object):
         for metadata in self.metadata:
             # Create and populate the :analysistype attribute
             setattr(metadata, self.analysistype, GenObject())
-
-            metadata[self.analysistype].targets = self.targets
-            metadata[self.analysistype].combinedtargets = self.combinedtargets
-            metadata[self.analysistype].targetpath = self.targetpath
-            metadata[self.analysistype].targetnames = sequencenames(self.combinedtargets)
+            if not self.genus_specific:
+                metadata[self.analysistype].targets = self.targets
+                metadata[self.analysistype].combinedtargets = self.combinedtargets
+                metadata[self.analysistype].targetpath = self.targetpath
+                metadata[self.analysistype].targetnames = sequencenames(self.combinedtargets)
+            else:
+                self.genus_targets(metadata)
             try:
                 metadata[self.analysistype].reportdir = os.path.join(metadata.general.outputdirectory,
                                                                      self.analysistype)
@@ -1105,6 +1126,7 @@ class Parser(object):
         self.strains = list()
         self.targets = list()
         self.combinedtargets = list()
+        self.genus_specific = args.genus_specific
 
 
 class ResistanceNotes(object):
@@ -1382,11 +1404,12 @@ class BLAST(object):
         printtime('Creating {at} blast databases as required'
                   .format(at=self.analysistype),
                   self.start)
-        self.geneseekr.makeblastdb(self.combinedtargets,
-                                   self.program)
-        self.targetfolders, self.targetfiles, self.records = \
-            self.geneseekr.target_folders(self.metadata,
-                                          self.analysistype)
+        for sample in self.metadata:
+            self.geneseekr.makeblastdb(sample[self.analysistype].combinedtargets,
+                                       self.program)
+            self.targetfolders, self.targetfiles, self.records = \
+                self.geneseekr.target_folders(self.metadata,
+                                              self.analysistype)
 
     def run_blast(self):
         """
@@ -1471,7 +1494,7 @@ class BLAST(object):
         self.metadata = self.geneseekr.clean_object(self.metadata,
                                                     self.analysistype)
 
-    def __init__(self, args, analysistype='geneseekr', cutoff=70, program='blastn'):
+    def __init__(self, args, analysistype='geneseekr', cutoff=70, program='blastn', genus_specific=False):
         try:
             args.program = args.program
         except AttributeError:
@@ -1525,10 +1548,12 @@ class BLAST(object):
         except (AttributeError, KeyError):
             self.targetpath = args.targetpath
         self.reportpath = args.reportpath
+        self.genus_specific = genus_specific
         try:
             self.metadata = args.runmetadata.samples
             parse = Parser(self)
-            parse.target_find()
+            if not self.genus_specific:
+                parse.target_find()
             parse.metadata_populate()
         except (AttributeError, KeyError):
             # Run the Parser class from the GeneSeekr methods script to create lists of the database targets, and
