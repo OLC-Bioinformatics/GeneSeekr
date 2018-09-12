@@ -480,6 +480,29 @@ class GeneSeekr(object):
         :param program: BLAST program used to perform analyses
         :return: Updated metadata object
         """
+        # Also make a CSV file with different formatting for portal parsing purposes
+        # Format as: Strain,Gene1,Gene2
+        #            ID,PercentID,PercentID for all strains input - have a zero when gene wasn't found.
+        csv_output = os.path.join(reportpath, '{at}_{program}.csv'.format(at=analysistype,
+                                                                          program=program))
+        targets = list()
+        for record in records:
+            for item in records[record]:
+                targets.append(item)
+        with open(csv_output, 'w') as outfile:
+            outfile.write('Strain')
+            for target in targets:
+                outfile.write(',{}'.format(target))
+            outfile.write('\n')
+            for sample in metadata:
+                outfile.write('{}'.format(sample.name))
+                for target in targets:
+                    if target in sample[analysistype].blastresults:
+                        outfile.write(',{}'.format(sample[analysistype].blastresults[target]))
+                    else:
+                        outfile.write(',0')
+                outfile.write('\n')
+
         # Create a workbook to store the report. Using xlsxwriter rather than a simple csv format, as I want to be
         # able to have appropriately sized, multi-line cells
         workbook = xlsxwriter.Workbook(os.path.join(reportpath, '{at}_{program}.xlsx'
