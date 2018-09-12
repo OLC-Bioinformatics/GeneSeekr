@@ -4,6 +4,8 @@ from time import time
 import click
 import sys
 
+__author__ = 'adamkoziol'
+
 start = time()
 
 # https://stackoverflow.com/a/40195800

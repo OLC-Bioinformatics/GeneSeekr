@@ -4,7 +4,7 @@ atomicwrites==1.1.5
 attrs==18.1.0
 beautifulsoup4==4.6.1
 biopython==1.70
-certifi==2018.4.16
+certifi==2018.8.24
 cffi==1.11.5
 chardet==3.0.4
 click==6.7
@@ -17,7 +17,7 @@ cryptography-vectors==2.3
 decorator==4.3.0
 filelock==3.0.4
 future==0.16.0
-geneseekr==0.0.3
+geneseekr==0.1.1
 glob2==0.6
 idna==2.7
 interop==1.1.4
@@ -29,12 +29,14 @@ livereload==2.5.2
 Markdown==2.6.11
 MarkupSafe==1.0
 mkdocs==0.17.5
+mkl-fft==1.0.4
+mkl-random==1.0.1
 mmtf-python==1.0.2
 more-itertools==4.2.0
 msgpack-python==0.5.6
 nbformat==4.4.0
-numpy==1.14.5
-OLCTools==0.3.96
+numpy==1.15.0
+OLCTools==0.4.0
 olefile==0.45.1
 Pillow==5.1.0
 pkginfo==1.4.2

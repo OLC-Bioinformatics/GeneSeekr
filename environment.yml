@@ -1,21 +1,20 @@
 name: geneseekr
 channels:
   - conda-forge
-  - adamkoziol
+  - olcbioinformatics
   - bioconda
   - defaults
 dependencies:
-  - geneseekr=0.0.4=py35h39e3cac_0
-  - olctools=0.3.96=py35_0
   - biopython=1.70=np112py35_1
   - blast=2.6.0=boost1.61_1
   - illumina-interop=1.1.4=hfc679d8_3
   - mmtf-python=1.0.2=py35_0
-  - asn1crypto=0.24.0=py_1
+  - asn1crypto=0.24.0=py35_3
   - atomicwrites=1.1.5=py35_0
   - attrs=18.1.0=py_1
   - beautifulsoup4=4.6.1=py35_0
-  - ca-certificates=2018.4.16=0
+  - ca-certificates=2018.8.24=ha4d7672_0
+  - certifi=2018.8.24=py35_1
   - cffi=1.11.5=py35_0
   - chardet=3.0.4=py35_2
   - click=6.7=py_1
@@ -33,7 +32,7 @@ dependencies:
   - markupsafe=1.0=py35_0
   - mkdocs=0.17.5=py_0
   - more-itertools=4.2.0=py35_1
-  - openssl=1.0.2o=h470a237_1
+  - openssl=1.0.2p=h470a237_0
   - patchelf=0.9=2
   - pkginfo=1.4.2=py_1
   - pluggy=0.6.0=py_0
@@ -53,8 +52,8 @@ dependencies:
   - xlsxwriter=1.0.5=py_0
   - yaml=0.1.7=0
   - anaconda-client=1.6.14=py35_0
+  - blas=1.0=mkl
   - boost=1.61.0=py35_0
-  - certifi=2018.4.16=py35_0
   - clyent=1.2.2=py35h491ffcb_1
   - conda-verify=3.1.0=py35_0
   - decorator=4.3.0=py35_0
@@ -75,10 +74,13 @@ dependencies:
   - libstdcxx-ng=7.2.0=hdf63c60_3
   - libtiff=4.0.9=he85c1e1_1
   - mkl=2018.0.3=1
+  - mkl_fft=1.0.4=py35h4414c95_1
+  - mkl_random=1.0.1=py35h4414c95_1
   - msgpack-python=0.5.6=py35h6bb024c_0
   - nbformat=4.4.0=py35h12e6e07_0
   - ncurses=6.1=hf484d3e_0
   - numpy=1.12.1=py35hca0bb5e_1
+  - numpy-base=1.15.0=py35h3dfced4_0
   - olefile=0.45.1=py35_0
   - pillow=5.1.0=py35h3deb7b8_0
   - pip=10.0.1=py35_0
@@ -94,5 +96,7 @@ dependencies:
   - wheel=0.31.1=py35_0
   - xz=5.2.4=h14c3975_4
   - zlib=1.2.11=ha838bed_2
+  - geneseekr=0.1.1=py35h39e3cac_0
+  - olctools=0.4.0=py35_0
 prefix: /home/adamkoziol/miniconda/envs/geneseekr
 
