@@ -141,7 +141,6 @@ class GeneSeekr(object):
                         os.remove(sample[analysistype].report)
                     except (IOError, ApplicationError):
                         pass
-                    raise
         # Return the updated metadata object
         return metadata
 
