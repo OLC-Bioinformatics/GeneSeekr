@@ -220,44 +220,47 @@ class GeneSeekr(object):
         :return: Updated metadata object
         """
         for sample in metadata:
-            # Open the sequence profile file as a dictionary
-            blastdict = DictReader(open(sample[analysistype].report), fieldnames=fieldnames, dialect='excel-tab')
-            resultdict = dict()
             # Initialise a dictionary to store all the target sequences
             sample[analysistype].targetsequence = dict()
-            # Go through each BLAST result
-            for row in blastdict:
-                # Create the subject length variable - if the sequences are DNA (e.g. blastn), use the subject
-                # length as usual; if the sequences are protein (e.g. tblastx), use the subject length / 3
-                if program == 'blastn' or program == 'blastp' or program == 'blastx':
-                    subject_length = float(row['subject_length'])
+            try:
+                # Open the sequence profile file as a dictionary
+                blastdict = DictReader(open(sample[analysistype].report), fieldnames=fieldnames, dialect='excel-tab')
+                resultdict = dict()
+                # Go through each BLAST result
+                for row in blastdict:
+                    # Create the subject length variable - if the sequences are DNA (e.g. blastn), use the subject
+                    # length as usual; if the sequences are protein (e.g. tblastx), use the subject length / 3
+                    if program == 'blastn' or program == 'blastp' or program == 'blastx':
+                        subject_length = float(row['subject_length'])
 
-                else:
-                    subject_length = float(row['subject_length']) / 3
-                # Calculate the percent identity and extract the bitscore from the row
-                # Percent identity is the (length of the alignment - number of mismatches) / total subject length
-                percentidentity = float('{:0.2f}'.format((float(row['positives']) - float(row['gaps'])) /
-                                                         subject_length * 100))
-                target = row['subject_id']
-                # If the percent identity is greater than the cutoff
-                if percentidentity >= cutoff:
-                    # Update the dictionary with the target and percent identity
-                    resultdict.update({target: percentidentity})
-                    # Determine if the orientation of the sequence is reversed compared to the reference
-                    if int(row['subject_end']) < int(row['subject_start']):
-                        # Create a sequence object using Biopython
-                        seq = Seq(row['query_sequence'], IUPAC.unambiguous_dna)
-                        # Calculate the reverse complement of the sequence
-                        querysequence = str(seq.reverse_complement())
-                    # If the sequence is not reversed, use the sequence as it is in the output
                     else:
-                        querysequence = row['query_sequence']
-                    # Add the sequence in the correct orientation to the sample
-                    sample[analysistype].targetsequence[target] = querysequence
-                # Add the percent identity to the object
-                sample[analysistype].blastresults = resultdict
-            # Populate missing results with 'NA' values
-            if len(resultdict) == 0:
+                        subject_length = float(row['subject_length']) / 3
+                    # Calculate the percent identity and extract the bitscore from the row
+                    # Percent identity is the (length of the alignment - number of mismatches) / total subject length
+                    percentidentity = float('{:0.2f}'.format((float(row['positives']) - float(row['gaps'])) /
+                                                             subject_length * 100))
+                    target = row['subject_id']
+                    # If the percent identity is greater than the cutoff
+                    if percentidentity >= cutoff:
+                        # Update the dictionary with the target and percent identity
+                        resultdict.update({target: percentidentity})
+                        # Determine if the orientation of the sequence is reversed compared to the reference
+                        if int(row['subject_end']) < int(row['subject_start']):
+                            # Create a sequence object using Biopython
+                            seq = Seq(row['query_sequence'], IUPAC.unambiguous_dna)
+                            # Calculate the reverse complement of the sequence
+                            querysequence = str(seq.reverse_complement())
+                        # If the sequence is not reversed, use the sequence as it is in the output
+                        else:
+                            querysequence = row['query_sequence']
+                        # Add the sequence in the correct orientation to the sample
+                        sample[analysistype].targetsequence[target] = querysequence
+                    # Add the percent identity to the object
+                    sample[analysistype].blastresults = resultdict
+                # Populate missing results with 'NA' values
+                if len(resultdict) == 0:
+                    sample[analysistype].blastresults = 'NA'
+            except FileNotFoundError:
                 sample[analysistype].blastresults = 'NA'
         return metadata
 
