@@ -1109,9 +1109,12 @@ class Parser(object):
             metadata[self.analysistype].combinedtargets = \
                 glob(os.path.join(metadata[self.analysistype].targetpath, '*.fasta'))[0]
         except IndexError:
-            combinetargets(self.targets, self.targetpath)
-            metadata[self.analysistype].combinedtargets = \
-                glob(os.path.join(metadata[self.analysistype].targetpath, '*.fasta'))[0]
+            try:
+                combinetargets(self.targets, self.targetpath)
+                metadata[self.analysistype].combinedtargets = \
+                    glob(os.path.join(metadata[self.analysistype].targetpath, '*.fasta'))[0]
+            except IndexError:
+                metadata[self.analysistype].combinedtargets = 'NA'
         metadata[self.analysistype].targetnames = metadata[self.analysistype].combinedtargets
 
     def metadata_populate(self):
