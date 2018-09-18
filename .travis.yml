@@ -17,3 +17,4 @@ script:
   - python -m pytest tests/test_blastx.py
   - python -m pytest tests/test_tblastn.py
   - python -m pytest tests/test_tblastx.py
+  - python -m pytest tests/test_imports.py
