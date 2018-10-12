@@ -1,6 +1,7 @@
 #!/usr/bin/env python 3
 from accessoryFunctions.accessoryFunctions import MetadataObject
-from geneseekr.geneseekr import BLAST, GeneSeekr
+from geneseekr.geneseekr import GeneSeekr
+from geneseekr.blast import BLAST
 import multiprocessing
 from glob import glob
 from time import time
@@ -68,8 +69,8 @@ def test_strain():
 def test_makeblastdb(variables):
     global geneseekr
     geneseekr = GeneSeekr()
-    geneseekr.makeblastdb(blastp_method.combinedtargets,
-                          blastp_method.program)
+    geneseekr.makeblastdb(fasta=blastp_method.combinedtargets,
+                          program=blastp_method.program)
     assert os.path.isfile(os.path.join(variables.targetpath, 'combinedtargets.psq'))
 
 
@@ -78,8 +79,8 @@ def test_variable_populate():
     global targetfiles
     global records
     targetfolders, targetfiles, records = \
-        geneseekr.target_folders(blastp_method.metadata,
-                                 blastp_method.analysistype)
+        geneseekr.target_folders(metadata=blastp_method.metadata,
+                                 analysistype=blastp_method.analysistype)
 
 
 def test_targetfolders():
@@ -95,10 +96,10 @@ def test_records():
 
 
 def test_blastp():
-    blastp_method.metadata = geneseekr.run_blast(blastp_method.metadata,
-                                                 blastp_method.analysistype,
-                                                 blastp_method.program,
-                                                 blastp_method.outfmt,
+    blastp_method.metadata = geneseekr.run_blast(metadata=blastp_method.metadata,
+                                                 analysistype=blastp_method.analysistype,
+                                                 program=blastp_method.program,
+                                                 outfmt=blastp_method.outfmt,
                                                  evalue=blastp_method.evalue,
                                                  num_threads=blastp_method.cpus)
 
@@ -117,42 +118,43 @@ def test_blastp_results():
 
 
 def test_blast_parse():
-    blastp_method.metadata = geneseekr.unique_parse_blast(blastp_method.metadata,
-                                                          blastp_method.analysistype,
-                                                          blastp_method.fieldnames,
-                                                          blastp_method.cutoff,
-                                                          blastp_method.program)
+    blastp_method.metadata = geneseekr.unique_parse_blast(metadata=blastp_method.metadata,
+                                                          analysistype=blastp_method.analysistype,
+                                                          fieldnames=blastp_method.fieldnames,
+                                                          cutoff=blastp_method.cutoff,
+                                                          program=blastp_method.program)
     for sample in blastp_method.metadata:
         assert sample.geneseekr.queryranges['contig1'] == [[1, 547]]
 
 
 def test_filter():
-    blastp_method.metadata = geneseekr.filter_unique(blastp_method.metadata,
-                                                     blastp_method.analysistype)
+    blastp_method.metadata = geneseekr.filter_unique(metadata=blastp_method.metadata,
+                                                     analysistype=blastp_method.analysistype)
     for sample in blastp_method.metadata:
         assert sample.geneseekr.blastlist[0]['percentidentity'] >= 70
 
 
 def test_dict_create():
-    blastp_method.metadata = geneseekr.dict_initialise(blastp_method.metadata,
-                                                       blastp_method.analysistype)
+    blastp_method.metadata = geneseekr.dict_initialise(metadata=blastp_method.metadata,
+                                                       analysistype=blastp_method.analysistype)
     for sample in blastp_method.metadata:
         assert type(sample.geneseekr.protseq) is dict
 
 
 def test_report_creation():
-    blastp_method.metadata = geneseekr.reporter(blastp_method.metadata,
-                                                blastp_method.analysistype,
-                                                blastp_method.reportpath,
-                                                blastp_method.align,
-                                                blastp_method.targetfiles,
-                                                blastp_method.records,
-                                                blastp_method.program)
+    blastp_method.metadata = geneseekr.resfinder_reporter(metadata=blastp_method.metadata,
+                                                          analysistype=blastp_method.analysistype,
+                                                          reportpath=blastp_method.reportpath,
+                                                          align=blastp_method.align,
+                                                          targetfiles=targetfolders,
+                                                          records=blastp_method.records,
+                                                          program=blastp_method.program,
+                                                          targetpath=blastp_method.targetpath)
 
 
 def test_report_csv():
     global geneseekr_csv
-    geneseekr_csv = os.path.join(blastp_method.reportpath, 'geneseekr_blastp.csv')
+    geneseekr_csv = os.path.join(blastp_method.reportpath, 'amr_test_blastp.csv')
     assert os.path.isfile(geneseekr_csv)
 
 
@@ -185,10 +187,6 @@ def test_makeblastdb_clean(variables):
 
 def test_remove_blastp_report():
     os.remove(blastp_report)
-
-
-def test_remove_geneseekr_csv():
-    os.remove(geneseekr_csv)
 
 
 def test_remove_geneseekr_xls():

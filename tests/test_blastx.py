@@ -1,6 +1,7 @@
 #!/usr/bin/env python 3
 from accessoryFunctions.accessoryFunctions import MetadataObject
-from geneseekr.geneseekr import BLAST, GeneSeekr
+from geneseekr.geneseekr import GeneSeekr
+from geneseekr.blast import BLAST
 import multiprocessing
 from glob import glob
 from time import time
@@ -68,8 +69,8 @@ def test_strain():
 def test_makeblastdb(variables):
     global geneseekr
     geneseekr = GeneSeekr()
-    geneseekr.makeblastdb(blastx_method.combinedtargets,
-                          blastx_method.program)
+    geneseekr.makeblastdb(fasta=blastx_method.combinedtargets,
+                          program=blastx_method.program)
     assert os.path.isfile(os.path.join(variables.targetpath, 'combinedtargets.psq'))
 
 
@@ -78,8 +79,8 @@ def test_variable_populate():
     global targetfiles
     global records
     targetfolders, targetfiles, records = \
-        geneseekr.target_folders(blastx_method.metadata,
-                                 blastx_method.analysistype)
+        geneseekr.target_folders(metadata=blastx_method.metadata,
+                                 analysistype=blastx_method.analysistype)
 
 
 def test_targetfolders():
@@ -95,10 +96,10 @@ def test_records():
 
 
 def test_blastx():
-    blastx_method.metadata = geneseekr.run_blast(blastx_method.metadata,
-                                                 blastx_method.analysistype,
-                                                 blastx_method.program,
-                                                 blastx_method.outfmt,
+    blastx_method.metadata = geneseekr.run_blast(metadata=blastx_method.metadata,
+                                                 analysistype=blastx_method.analysistype,
+                                                 program=blastx_method.program,
+                                                 outfmt=blastx_method.outfmt,
                                                  evalue=blastx_method.evalue,
                                                  num_threads=blastx_method.cpus)
 
@@ -117,37 +118,37 @@ def test_blastx_results():
 
 
 def test_blast_parse():
-    blastx_method.metadata = geneseekr.unique_parse_blast(blastx_method.metadata,
-                                                          blastx_method.analysistype,
-                                                          blastx_method.fieldnames,
-                                                          blastx_method.cutoff,
-                                                          blastx_method.program)
+    blastx_method.metadata = geneseekr.unique_parse_blast(metadata=blastx_method.metadata,
+                                                          analysistype=blastx_method.analysistype,
+                                                          fieldnames=blastx_method.fieldnames,
+                                                          cutoff=blastx_method.cutoff,
+                                                          program=blastx_method.program)
     for sample in blastx_method.metadata:
         assert sample.geneseekr.queryranges['Contig_54_76.3617'] == [[29664, 31283], [11054, 11845]]
 
 
 def test_filter():
-    blastx_method.metadata = geneseekr.filter_unique(blastx_method.metadata,
-                                                     blastx_method.analysistype)
+    blastx_method.metadata = geneseekr.filter_unique(metadata=blastx_method.metadata,
+                                                     analysistype=blastx_method.analysistype)
     for sample in blastx_method.metadata:
         assert sample.geneseekr.blastlist[0]['percentidentity'] >= 70
 
 
 def test_dict_create():
-    blastx_method.metadata = geneseekr.dict_initialise(blastx_method.metadata,
-                                                       blastx_method.analysistype)
+    blastx_method.metadata = geneseekr.dict_initialise(metadata=blastx_method.metadata,
+                                                       analysistype=blastx_method.analysistype)
     for sample in blastx_method.metadata:
         assert type(sample.geneseekr.protseq) is dict
 
 
 def test_report_creation():
-    blastx_method.metadata = geneseekr.reporter(blastx_method.metadata,
-                                                blastx_method.analysistype,
-                                                blastx_method.reportpath,
-                                                blastx_method.align,
-                                                blastx_method.targetfiles,
-                                                blastx_method.records,
-                                                blastx_method.program)
+    blastx_method.metadata = geneseekr.reporter(metadata=blastx_method.metadata,
+                                                analysistype=blastx_method.analysistype,
+                                                reportpath=blastx_method.reportpath,
+                                                align=blastx_method.align,
+                                                targetfiles=targetfolders,
+                                                records=blastx_method.records,
+                                                program=blastx_method.program)
 
 
 def test_report_csv():

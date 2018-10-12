@@ -1,6 +1,7 @@
 #!/usr/bin/env python 3
 from accessoryFunctions.accessoryFunctions import MetadataObject
-from geneseekr.geneseekr import BLAST, GeneSeekr
+from geneseekr.geneseekr import GeneSeekr
+from geneseekr.blast import BLAST
 import multiprocessing
 from glob import glob
 from time import time
@@ -68,8 +69,8 @@ def test_strain():
 def test_makeblastdb(variables):
     global geneseekr
     geneseekr = GeneSeekr()
-    geneseekr.makeblastdb(blastn_method.combinedtargets,
-                          blastn_method.program)
+    geneseekr.makeblastdb(fasta=blastn_method.combinedtargets,
+                          program=blastn_method.program)
     assert os.path.isfile(os.path.join(variables.targetpath, 'combinedtargets.nsq'))
 
 
@@ -78,8 +79,8 @@ def test_variable_populate():
     global targetfiles
     global records
     targetfolders, targetfiles, records = \
-        geneseekr.target_folders(blastn_method.metadata,
-                                 blastn_method.analysistype)
+        geneseekr.target_folders(metadata=blastn_method.metadata,
+                                 analysistype=blastn_method.analysistype)
 
 
 def test_targetfolders():
@@ -95,10 +96,10 @@ def test_records():
 
 
 def test_blastn():
-    blastn_method.metadata = geneseekr.run_blast(blastn_method.metadata,
-                                                 blastn_method.analysistype,
-                                                 blastn_method.program,
-                                                 blastn_method.outfmt,
+    blastn_method.metadata = geneseekr.run_blast(metadata=blastn_method.metadata,
+                                                 analysistype=blastn_method.analysistype,
+                                                 program=blastn_method.program,
+                                                 outfmt=blastn_method.outfmt,
                                                  evalue=blastn_method.evalue,
                                                  num_threads=blastn_method.cpus)
 
@@ -117,37 +118,38 @@ def test_blastn_results():
 
 
 def test_blast_parse():
-    blastn_method.metadata = geneseekr.unique_parse_blast(blastn_method.metadata,
-                                                          blastn_method.analysistype,
-                                                          blastn_method.fieldnames,
-                                                          blastn_method.cutoff,
-                                                          blastn_method.program)
+    blastn_method.metadata = geneseekr.unique_parse_blast(metadata=blastn_method.metadata,
+                                                          analysistype=blastn_method.analysistype,
+                                                          fieldnames=blastn_method.fieldnames,
+                                                          cutoff=blastn_method.cutoff,
+                                                          program=blastn_method.program)
     for sample in blastn_method.metadata:
         assert sample.resfinder.queryranges['Contig_54_76.3617'] == [[11054, 11848]]
 
 
 def test_filter():
-    blastn_method.metadata = geneseekr.filter_unique(blastn_method.metadata,
-                                                     blastn_method.analysistype)
+    blastn_method.metadata = geneseekr.filter_unique(metadata=blastn_method.metadata,
+                                                     analysistype=blastn_method.analysistype)
     for sample in blastn_method.metadata:
         assert sample.resfinder.blastlist[0]['percentidentity'] >= 70
 
 
 def test_dict_create():
-    blastn_method.metadata = geneseekr.dict_initialise(blastn_method.metadata,
-                                                       blastn_method.analysistype)
+    blastn_method.metadata = geneseekr.dict_initialise(metadata=blastn_method.metadata,
+                                                       analysistype=blastn_method.analysistype)
     for sample in blastn_method.metadata:
         assert type(sample.resfinder.protseq) is dict
 
+
 def test_report_creation():
-    blastn_method.metadata = geneseekr.resfinder_reporter(blastn_method.metadata,
-                                                          blastn_method.analysistype,
-                                                          targetfolders,
-                                                          blastn_method.reportpath,
-                                                          blastn_method.align,
-                                                          blastn_method.targetfiles,
-                                                          blastn_method.records,
-                                                          blastn_method.program)
+    blastn_method.metadata = geneseekr.resfinder_reporter(metadata=blastn_method.metadata,
+                                                          analysistype=blastn_method.analysistype,
+                                                          reportpath=blastn_method.reportpath,
+                                                          align=blastn_method.align,
+                                                          targetfiles=targetfolders,
+                                                          records=blastn_method.records,
+                                                          program=blastn_method.program,
+                                                          targetpath=blastn_method.targetpath)
 
 
 def test_report_existance():
@@ -158,8 +160,7 @@ def test_report_existance():
 
 def test_report_row():
     for sample in blastn_method.metadata:
-        assert sorted(sample.resfinder.sampledata)[0] == \
-               ['blaOXA', '1', 'Beta-Lactamase', 86.16, 100.0, 'Contig_54_76.3617', '11054...11848', '-']
+        assert sorted(sample.resfinder.sampledata)[0][0] == 'blaOXA'
 
 
 def test_parse_results():

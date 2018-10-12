@@ -1,6 +1,7 @@
 #!/usr/bin/env python 3
 from accessoryFunctions.accessoryFunctions import MetadataObject
-from geneseekr.geneseekr import BLAST, GeneSeekr
+from geneseekr.geneseekr import GeneSeekr
+from geneseekr.blast import BLAST
 import multiprocessing
 from glob import glob
 from time import time
@@ -69,8 +70,8 @@ def test_strain():
 def test_makeblastdb(variables):
     global geneseekr
     geneseekr = GeneSeekr()
-    geneseekr.makeblastdb(tblastx_method.combinedtargets,
-                          tblastx_method.program)
+    geneseekr.makeblastdb(fasta=tblastx_method.combinedtargets,
+                          program=tblastx_method.program)
     assert os.path.isfile(os.path.join(variables.targetpath, 'combinedtargets.nsq'))
 
 
@@ -79,8 +80,8 @@ def test_variable_populate():
     global targetfiles
     global records
     targetfolders, targetfiles, records = \
-        geneseekr.target_folders(tblastx_method.metadata,
-                                 tblastx_method.analysistype)
+        geneseekr.target_folders(metadata=tblastx_method.metadata,
+                                 analysistype=tblastx_method.analysistype)
 
 
 def test_targetfolders():
@@ -96,10 +97,10 @@ def test_records():
 
 
 def test_tblastx():
-    tblastx_method.metadata = geneseekr.run_blast(tblastx_method.metadata,
-                                                  tblastx_method.analysistype,
-                                                  tblastx_method.program,
-                                                  tblastx_method.outfmt,
+    tblastx_method.metadata = geneseekr.run_blast(metadata=tblastx_method.metadata,
+                                                  analysistype=tblastx_method.analysistype,
+                                                  program=tblastx_method.program,
+                                                  outfmt=tblastx_method.outfmt,
                                                   evalue=tblastx_method.evalue,
                                                   num_threads=tblastx_method.cpus)
 
@@ -118,38 +119,38 @@ def test_tblastx_results():
 
 
 def test_blast_parse():
-    tblastx_method.metadata = geneseekr.unique_parse_blast(tblastx_method.metadata,
-                                                           tblastx_method.analysistype,
-                                                           tblastx_method.fieldnames,
-                                                           tblastx_method.cutoff,
-                                                           tblastx_method.program)
+    tblastx_method.metadata = geneseekr.unique_parse_blast(metadata=tblastx_method.metadata,
+                                                           analysistype=tblastx_method.analysistype,
+                                                           fieldnames=tblastx_method.fieldnames,
+                                                           cutoff=tblastx_method.cutoff,
+                                                           program=tblastx_method.program)
     for sample in tblastx_method.metadata:
         assert sample.resfinder.queryranges['Contig_54_76.3617'] == [[11054, 11848]]
 
 
 def test_filter():
-    tblastx_method.metadata = geneseekr.filter_unique(tblastx_method.metadata,
-                                                      tblastx_method.analysistype)
+    tblastx_method.metadata = geneseekr.filter_unique(metadata=tblastx_method.metadata,
+                                                      analysistype=tblastx_method.analysistype)
     for sample in tblastx_method.metadata:
         assert sample.resfinder.blastlist[0]['percentidentity'] >= 70
 
 
 def test_dict_create():
-    tblastx_method.metadata = geneseekr.dict_initialise(tblastx_method.metadata,
-                                                        tblastx_method.analysistype)
+    tblastx_method.metadata = geneseekr.dict_initialise(metadata=tblastx_method.metadata,
+                                                        analysistype=tblastx_method.analysistype)
     for sample in tblastx_method.metadata:
         assert type(sample.resfinder.protseq) is dict
 
 
 def test_report_creation():
-    tblastx_method.metadata = geneseekr.resfinder_reporter(tblastx_method.metadata,
-                                                           tblastx_method.analysistype,
-                                                           targetfolders,
-                                                           tblastx_method.reportpath,
-                                                           tblastx_method.align,
-                                                           tblastx_method.targetfiles,
-                                                           tblastx_method.records,
-                                                           tblastx_method.program)
+    tblastx_method.metadata = geneseekr.resfinder_reporter(metadata=tblastx_method.metadata,
+                                                           analysistype=tblastx_method.analysistype,
+                                                           reportpath=tblastx_method.reportpath,
+                                                           align=tblastx_method.align,
+                                                           targetfiles=targetfolders,
+                                                           records=tblastx_method.records,
+                                                           program=tblastx_method.program,
+                                                           targetpath=tblastx_method.targetpath)
 
 
 def test_report_existance():
@@ -160,8 +161,7 @@ def test_report_existance():
 
 def test_report_row():
     for sample in tblastx_method.metadata:
-        assert sorted(sample.resfinder.sampledata)[0] == \
-               ['ampH', '2', 'Beta-Lactamase', 93.96, 100.0, 'Contig_54_76.3617', '11054...11848', '-']
+        assert sorted(sample.resfinder.sampledata)[0][0] == 'ampH'
 
 
 def test_parse_results():
