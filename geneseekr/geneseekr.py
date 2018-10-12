@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-from accessoryFunctions.accessoryFunctions import run_subprocess, make_path, \
-    combinetargets, MetadataObject, GenObject, printtime
+from accessoryFunctions.accessoryFunctions import make_path, run_subprocess
+from accessoryFunctions.resistance import ResistanceNotes
 from biotools.bbtools import kwargs_to_string
 from Bio.Blast.Applications import NcbiblastnCommandline, NcbiblastxCommandline, NcbiblastpCommandline, \
     NcbitblastnCommandline, NcbitblastxCommandline
@@ -12,9 +12,9 @@ from Bio import pairwise2
 from Bio.Seq import Seq
 from Bio import SeqIO
 from csv import DictReader
-import multiprocessing
 from glob import glob
 import xlsxwriter
+import logging
 import csv
 import sys
 import os
@@ -50,6 +50,7 @@ class GeneSeekr(object):
                     dbtype=dbtype,
                     output=output,
                     options=options)
+        logging.debug(cmd)
         # Check if database already exists
         if not os.path.isfile('{}.nhr'.format(output)):
             out, err = run_subprocess(cmd)
@@ -117,15 +118,45 @@ class GeneSeekr(object):
             db = os.path.splitext(sample[analysistype].combinedtargets)[0]
             # Create the command line argument using the appropriate BioPython BLAST wrapper
             if program == 'blastn':
-                blast = self.blastn_commandline(sample, analysistype, db, evalue, num_alignments, num_threads, outfmt)
+                blast = self.blastn_commandline(sample=sample,
+                                                analysistype=analysistype,
+                                                db=db,
+                                                evalue=evalue,
+                                                num_alignments=num_alignments,
+                                                num_threads=num_threads,
+                                                outfmt=outfmt)
             elif program == 'blastp':
-                blast = self.blastp_commandline(sample, analysistype, db, evalue, num_alignments, num_threads, outfmt)
+                blast = self.blastp_commandline(sample=sample,
+                                                analysistype=analysistype,
+                                                db=db,
+                                                evalue=evalue,
+                                                num_alignments=num_alignments,
+                                                num_threads=num_threads,
+                                                outfmt=outfmt)
             elif program == 'blastx':
-                blast = self.blastx_commandline(sample, analysistype, db, evalue, num_alignments, num_threads, outfmt)
+                blast = self.blastx_commandline(sample=sample,
+                                                analysistype=analysistype,
+                                                db=db,
+                                                evalue=evalue,
+                                                num_alignments=num_alignments,
+                                                num_threads=num_threads,
+                                                outfmt=outfmt)
             elif program == 'tblastn':
-                blast = self.tblastn_commandline(sample, analysistype, db, evalue, num_alignments, num_threads, outfmt)
+                blast = self.tblastn_commandline(sample=sample,
+                                                 analysistype=analysistype,
+                                                 db=db,
+                                                 evalue=evalue,
+                                                 num_alignments=num_alignments,
+                                                 num_threads=num_threads,
+                                                 outfmt=outfmt)
             elif program == 'tblastx':
-                blast = self.tblastx_commandline(sample, analysistype, db, evalue, num_alignments, num_threads, outfmt)
+                blast = self.tblastx_commandline(sample=sample,
+                                                 analysistype=analysistype,
+                                                 db=db,
+                                                 evalue=evalue,
+                                                 num_alignments=num_alignments,
+                                                 num_threads=num_threads,
+                                                 outfmt=outfmt)
             else:
                 blast = str()
             assert blast, 'Something went wrong, the BLAST program you provided ({program}) isn\'t supported'\
@@ -524,43 +555,70 @@ class GeneSeekr(object):
         row = 0
         # A dictionary to store the column widths for every header
         columnwidth = dict()
-        extended = False
+        # Initialise a list of all the headers with 'Strain'
+        headers = ['Strain']
+        # A set to store whether which genes (if any) require additional columns in the report due to
+        # printing of alignments
+        align_set = set()
+        # Determine which genes require alignments
         for sample in metadata:
-            # Reset the column to zero
-            col = 0
+            if sample[analysistype].targetnames != 'NA':
+                if sample[analysistype].blastresults != 'NA':
+                    for target in sorted(sample[analysistype].targetnames):
+
+                        try:
+                            # Only if the alignment option is selected, for inexact results, add alignments
+                            if align and sample[analysistype].blastresults[target] != 100.00:
+                                # Add the target to the set of targets requiring alignments
+                                align_set.add(target)
+                        except KeyError:
+                            pass
+        # Create the headers as required for targets with alignments
+        for sample in metadata:
+            if sample[analysistype].targetnames != 'NA':
+                if sample[analysistype].blastresults != 'NA':
+                    for target in sorted(sample[analysistype].targetnames):
+                        # Add the name of the gene to the header
+                        headers.append(target)
+                        if target in align_set:
+                            if program == 'blastn':
+                                # Add the appropriate headers
+                                headers.extend(['{target}_aa_Alignment'.format(target=target),
+                                                '{target}_aa_SNP_location'.format(target=target),
+                                                '{target}_nt_Alignment'.format(target=target),
+                                                '{target}_nt_SNP_location'.format(target=target)
+                                                ])
+                            else:
+                                headers.extend(['{target}_aa_Alignment'.format(target=target),
+                                                '{target}_aa_SNP_location'.format(target=target),
+                                                ])
+                    # Only need to iterate through this once
+                    break
+        # Set the column to zero
+        col = 0
+        # Write the header to the spreadsheet
+        for header in headers:
+            worksheet.write(row, col, header, bold)
+            # Set the column width based on the longest header
+            try:
+                columnwidth[col] = len(header) if len(header) > columnwidth[col] else columnwidth[col]
+            except KeyError:
+                columnwidth[col] = len(header)
+            worksheet.set_column(col, col, columnwidth[col])
+            col += 1
+        for sample in metadata:
             # Initialise a list to store all the data for each strain
             data = list()
-            # Initialise a list of all the headers with 'Strain'
-            headers = ['Strain']
             if sample[analysistype].targetnames != 'NA':
                 # Append the sample name to the data list only if the script could find targets
                 data.append(sample.name)
                 if sample[analysistype].blastresults != 'NA':
                     for target in sorted(sample[analysistype].targetnames):
-                        # Add the name of the gene to the header
-                        headers.append(target)
                         try:
-                            # Append the percent identity to the data list
-                            data.append(str(sample[analysistype].blastresults[target]))
                             # Only if the alignment option is selected, for inexact results, add alignments
                             if align and sample[analysistype].blastresults[target] != 100.00:
                                 # Align the protein (and nucleotide) sequences to the reference
                                 sample = self.alignprotein(sample, analysistype, target, targetfiles, records, program)
-                                if not extended:
-                                    if program == 'blastn':
-                                        # Add the appropriate headers
-                                        headers.extend(['aa_Sequence',
-                                                        'aa_Alignment',
-                                                        'aa_SNP_location',
-                                                        'nt_Alignment',
-                                                        'nt_SNP_location'
-                                                        ])
-                                    else:
-                                        headers.extend(['aa_Sequence',
-                                                        'aa_Alignment',
-                                                        'aa_SNP_location',
-                                                        ])
-                                    extended = True
                                 # Create a FASTA-formatted sequence output of the query sequence
                                 if program == 'blastn':
                                     record = SeqRecord(sample[analysistype].dnaseq[target],
@@ -585,22 +643,37 @@ class GeneSeekr(object):
                                                  sample[analysistype].aaalign[target],
                                                  sample[analysistype].aaindex[target],
                                                  ])
+                            elif align and sample[analysistype].blastresults[target] == 100.00:
+                                if target in align_set:
+                                    if program == 'blastn':
+                                        data.extend(['+', '-', '-', '-', '-'])
+                                    else:
+                                        data.extend(['+', '-', '-'])
+                                else:
+                                    data.append('-')
+                            elif not align and sample[analysistype].blastresults[target] == 100.00:
+                                data.append('+')
+                            else:
+                                if target in align_set:
+                                    if program == 'blastn':
+                                        data.extend(['-', '-', '-', '-', '-'])
+                                    else:
+                                        data.extend(['-', '-', '-'])
+                                else:
+                                    data.append('-')
                         # If there are no blast results for the target, add a '-'
                         except (KeyError, TypeError):
-                            data.append('-')
+                            if target in align_set:
+                                if program == 'blastn':
+                                    data.extend(['-', '-', '-', '-', '-'])
+                                else:
+                                    data.extend(['-', '-', '-'])
+                            else:
+                                data.append('-')
                 # If there are no blast results at all, add a '-'
                 else:
-                    data.append('-')
-            # Write the header to the spreadsheet
-            for header in headers:
-                worksheet.write(row, col, header, bold)
-                # Set the column width based on the longest header
-                try:
-                    columnwidth[col] = len(header)if len(header) > columnwidth[col] else columnwidth[col]
-                except KeyError:
-                    columnwidth[col] = len(header)
-                worksheet.set_column(col, col, columnwidth[col])
-                col += 1
+                    data.extend(['-'] * (len(headers) - 1))
+
             # Increment the row and reset the column to zero in preparation of writing results
             row += 1
             col = 0
@@ -632,34 +705,32 @@ class GeneSeekr(object):
                 col += 1
             # Set the width of the row to be the number of lines (number of newline characters) * 12
             if len(totallines) != 0:
-                worksheet.set_row(row, max(totallines) * 12)
+                worksheet.set_row(row, max(totallines) * 15)
             else:
                 worksheet.set_row(row, 1)
-            # Increase the row counter for the next strain's data
-            row += 1
         # Close the workbook
         workbook.close()
         # Return the updated metadata object
         return metadata
 
-    def resfinder_reporter(self, metadata, analysistype, targetfolders, reportpath, align, targetfiles, records,
-                           program):
+    def resfinder_reporter(self, metadata, analysistype, reportpath, align, targetfiles, records,
+                           program, targetpath):
         """
         Custom reports for ResFinder analyses. These reports link the gene(s) found to their resistance phenotypes
         :param metadata: Metadata object
         :param analysistype: Current analysis type
-        :param targetfolders: List of all folders with targets used in the analyses
         :param reportpath: Path of folder in which report is to be created
         :param align: Boolean of whether alignments between query and subject sequences are desired
         :param targetfiles: List of all files used in the analyses
         :param records: Dictionary of SeqIO parsed sequence records
         :param program: BLAST program used in the analyses
+        :param targetpath: Name and path of the folder containing the targets
         :return: Updated metadata object
         """
-        target_dir = str()
-        for folder in targetfolders:
-            target_dir = folder
-        genedict, altgenedict = ResistanceNotes.notes(target_dir)
+        # Since the resfinder database is used for both sipping and assembled analyses, but the analysis type is
+        # different, strip off the _assembled, so the targets are set correctly
+        targetpath = targetpath if analysistype != 'resfinder_assembled' else targetpath.rstrip('_assembled')
+        resistance_classes = ResistanceNotes.classes(targetpath)
         # Create a workbook to store the report. Using xlsxwriter rather than a simple csv format, as I want to be
         # able to have appropriately sized, multi-line cells
         workbook = xlsxwriter.Workbook(os.path.join(reportpath, '{at}_{program}.xlsx'
@@ -690,15 +761,18 @@ class GeneSeekr(object):
                 for result in sample[analysistype].blastlist:
                     # Set the name to avoid writing out the dictionary[key] multiple times
                     name = result['subject_id']
-                    # Use the ResistanceNotes gene name extraction method to get the necessary variables
-                    gname, genename, accession, allele = ResistanceNotes.gene_name(name)
+                    try:
+                        # Extract the necessary variables from the gene name string
+                        gname, genename, accession, allele = ResistanceNotes.gene_name(name)
+                    except ValueError:
+                        genename = name
+                        allele = str()
                     # Initialise a list to store all the data for each strain
                     data = list()
-                    # Determine the name of the gene to use in the report and the resistance using the resistance
-                    # method
-                    finalgene, resistance = ResistanceNotes.resistance(gname, genename, genedict, altgenedict)
+                    # Determine resistance phenotype of the gene
+                    resistance = ResistanceNotes.resistance(name, resistance_classes)
                     # Append the necessary values to the data list
-                    data.append(finalgene)
+                    data.append(genename)
                     data.append(allele)
                     data.append(resistance)
                     percentid = result['percentidentity']
@@ -708,7 +782,7 @@ class GeneSeekr(object):
                     data.append('...'.join([str(result['low']), str(result['high'])]))
                     # Populate the .pipelineresults attribute for compatibility with the assembly pipeline
                     sample[analysistype].pipelineresults.append(
-                        '{rgene} ({pid}%) {rclass}'.format(rgene=finalgene,
+                        '{rgene} ({pid}%) {rclass}'.format(rgene=genename,
                                                            pid=percentid,
                                                            rclass=resistance))
                     try:
@@ -1026,590 +1100,17 @@ class GeneSeekr(object):
         for sample in metadata:
             try:
                 delattr(sample[analysistype], "targetnames")
-            except KeyError:
+            except AttributeError:
                 pass
             try:
                 delattr(sample[analysistype], "targets")
-            except KeyError:
+            except AttributeError:
                 pass
             try:
                 delattr(sample[analysistype], "dnaseq")
-            except KeyError:
+            except AttributeError:
                 pass
             try:
                 delattr(sample[analysistype], "protseq")
-            except KeyError:
-                pass
-
-
-class Parser(object):
-
-    def main(self):
-        """
-        Run the parsing methods
-        """
-        if not self.genus_specific:
-            self.target_find()
-            self.strainer()
-        self.metadata_populate()
-
-    def strainer(self):
-        """
-        Locate all the FASTA files in the supplied sequence path. Create basic metadata objects for
-        each sample
-        """
-        assert os.path.isdir(self.sequencepath), 'Cannot locate sequence path as specified: {}' \
-            .format(self.sequencepath)
-        # Get the sequences in the sequences folder into a list. Note that they must have a file extension that
-        # begins with .fa
-        self.strains = sorted(glob(os.path.join(self.sequencepath, '*.fa*'.format(self.sequencepath))))
-        # Populate the metadata object. This object will be populated to mirror the objects created in the
-        # genome assembly pipeline. This way this script will be able to be used as a stand-alone, or as part
-        # of a pipeline
-        assert self.strains, 'Could not find any files with an extension starting with "fa" in {}. Please check' \
-                             'to ensure that your sequence path is correct'.format(self.sequencepath)
-        for sample in self.strains:
-            # Create the object
-            metadata = MetadataObject()
-            # Set the base file name of the sequence. Just remove the file extension
-            filename = os.path.splitext(os.path.split(sample)[1])[0]
-            # Set the .name attribute to be the file name
-            metadata.name = filename
-            # Create the .general attribute
-            metadata.general = GenObject()
-            # Set the .general.bestassembly file to be the name and path of the sequence file
-            metadata.general.bestassemblyfile = sample
-            # Append the metadata for each sample to the list of samples
-            self.metadata.append(metadata)
-
-    def target_find(self):
-        """
-        Locate all .tfa FASTA files in the supplied target path. If the combinedtargets.fasta file
-        does not exist, run the combine targets method
-        """
-        self.targets = sorted(glob(os.path.join(self.targetpath, '*.tfa')))
-        try:
-            self.combinedtargets = glob(os.path.join(self.targetpath, '*.fasta'))[0]
-        except IndexError:
-            combinetargets(self.targets, self.targetpath)
-            self.combinedtargets = glob(os.path.join(self.targetpath, '*.fasta'))[0]
-        assert self.targets, 'Could not find any files with an extension starting with "fa" in {}. Please check' \
-                             'to ensure that your target path is correct'.format(self.targetpath)
-
-    def genus_targets(self, metadata):
-        """
-
-
-        """
-        metadata[self.analysistype].targetpath = os.path.join(self.targetpath, metadata.general.referencegenus)
-        metadata[self.analysistype].targets = \
-            sorted(glob(os.path.join(metadata[self.analysistype].targetpath, '*.tfa')))
-        metadata[self.analysistype].combinedtargets = self.combinedtargets
-        try:
-            metadata[self.analysistype].combinedtargets = \
-                glob(os.path.join(metadata[self.analysistype].targetpath, '*.fasta'))[0]
-        except IndexError:
-            try:
-                combinetargets(self.targets, self.targetpath)
-                metadata[self.analysistype].combinedtargets = \
-                    glob(os.path.join(metadata[self.analysistype].targetpath, '*.fasta'))[0]
-            except IndexError:
-                metadata[self.analysistype].combinedtargets = 'NA'
-        metadata[self.analysistype].targetnames = metadata[self.analysistype].combinedtargets
-
-    def metadata_populate(self):
-        """
-        Populate the :analysistype GenObject
-        """
-        for metadata in self.metadata:
-            # Create and populate the :analysistype attribute
-            setattr(metadata, self.analysistype, GenObject())
-            if not self.genus_specific:
-                metadata[self.analysistype].targets = self.targets
-                metadata[self.analysistype].combinedtargets = self.combinedtargets
-                metadata[self.analysistype].targetpath = self.targetpath
-                metadata[self.analysistype].targetnames = sequencenames(self.combinedtargets)
-            else:
-                self.genus_targets(metadata)
-            try:
-                metadata[self.analysistype].reportdir = os.path.join(metadata.general.outputdirectory,
-                                                                     self.analysistype)
-            except (AttributeError, KeyError):
-                metadata[self.analysistype].reportdir = self.reportpath
-
-    def __init__(self, args):
-        self.analysistype = args.analysistype
-        self.sequencepath = os.path.join(args.sequencepath)
-        self.targetpath = os.path.join(args.targetpath)
-        if not os.path.isdir(self.targetpath):
-            self.targetpath = self.targetpath.split('_')[0]
-        assert os.path.isdir(self.targetpath), 'Cannot locate target path as specified: {}' \
-            .format(self.targetpath)
-        self.reportpath = os.path.join(args.reportpath)
-        make_path(self.reportpath)
-        assert os.path.isdir(self.reportpath), 'Cannot locate report path as specified: {}' \
-            .format(self.reportpath)
-        self.logfile = os.path.join(self.sequencepath, 'log.txt')
-        try:
-            self.metadata = args.metadata
-        except AttributeError:
-            self.metadata = list()
-        self.strains = list()
-        self.targets = list()
-        self.combinedtargets = list()
-        self.genus_specific = args.genus_specific
-
-
-class ResistanceNotes(object):
-
-    @staticmethod
-    def notes(targetpath):
-        """
-        Populates resistance dictionary with resistance class: base gene name
-        :param targetpath: Directory in which the notes.txt file is located
-        :return: the resistance dictionaries
-        """
-        # Create a set of all the resistance classes and the base names
-        genedict = dict()
-        altgenedict = dict()
-        # Load the notes file to a dictionary
-        notefile = os.path.join(targetpath, 'notes.txt')
-        with open(notefile, 'r') as notes:
-            res_class = str()
-            for line in notes:
-                # Create entries for each class - these are on lines beginning with '#' e.g. #Rifampicin resistance
-                if line.startswith('#'):
-                    res_class = line.split(' resistance')[0].lstrip('#').replace(':', '').rstrip()
-                    # Initialise the dictionary as a set for the resistance class
-                    genedict[res_class] = set()
-                else:
-                    # aac(6')-III:Aminoglycoside resistance: yields a base gene name of aac
-                    gene = line.split(':')[0].split('(')[0].split('-')[0].rstrip()
-                    # Aminoglycoside resistance
-                    if 'Alternate name' in line:
-                        # Extract the full gene name e.g. aac(6')-III:Aminoglycoside resistance: yields aac(6')-III
-                        full_gene = line.split(':')[0]
-                        # There are two formats for the alternate name in the file. Account for both
-                        try:
-                            alternate = line.split(';')[1].rstrip().lstrip()
-                        except IndexError:
-                            alternate = line.split('name ')[1].rstrip().lstrip()
-                        # Populate the dictionaries
-                        genedict[res_class].add(alternate)
-                        altgenedict[full_gene] = alternate
-                    else:
-                        genedict[res_class].add(gene)
-        return genedict, altgenedict
-
-    @staticmethod
-    def gene_name(name):
-        """
-        Split the FASTA header string into its components, including gene name, allele, and accession
-        :param name: FASTA header
-        :return: gname, genename, accession, allele: name of gene. Often the same as genename, but for certain entries
-        it is longer, full gene name, accession, and allele extracted from the FASTA header
-        """
-        if 'Van' in name or 'mcr' in name or 'aph' in name or 'ddlA' in name or 'ant' in name:
-            try:
-                if name == "ant(3'')_Ih_aac(6')_IId_1_AF453998":
-                    # >aac(3)_Ib_aac(6')_Ib_1_AF355189 yields gname, genename: aac(3)-Ib-aac(6')-Ib, allele:1,
-                    # accession: AF355189
-                    gene1, version1, gene2, version2, allele, accession = name.split('_')
-                    gname = '{g1}-{v1}-{g2}-{v2}'.format(g1=gene1,
-                                                         v1=version1,
-                                                         g2=gene2,
-                                                         v2=version2)
-                    genename = gname
-                elif name == 'ant(3'')_Ia_1_X02340':
-                    # >ant(3'')_Ia_1_X02340
-                    gene, version, allele, accession = name.split('_')
-                    gname = '{g}-{v}'.format(g=gene,
-                                             v=version)
-                    genename = gname
-                elif 'mcr_3' in name or 'mcr_2' in name or 'mcr_1.10' in name:
-                    # >mcr_3.3_1_NG055492 yields genename, gname: mcr-3, allele: 1, accession: NG055492
-                    gene, combinedversion, allele, accession = name.split('_')
-                    version = combinedversion.split('.')[0]
-                    gname = '{gene}-{version}'.format(gene=gene,
-                                                      version=version)
-                    genename = gname
-
-                else:
-                    # Allow for an additional part to the gene name aph(3'')_Ib_5_AF321551 yields gname: aph(3''),
-                    # genename: aph(3'')-Ib, allele: 5, accession AF321551
-                    try:
-                        pregene, postgene, allele, accession = name.split('_')
-                        gname = '{pre}-{post}'.format(pre=pregene,
-                                                      post=postgene)
-                        genename = gname
-                    except ValueError:
-                        # Allow for underscores in the accession: aac(2')_Ie_1_NC_011896 yields gname: aac(2'),
-                        # genename:  aac('2)-1e, allele: 1, accession NC_011896
-                        pregene, postgene, allele, preaccession, postaccession = name.split('_')
-                        genename = '{pre}-{post}'.format(pre=pregene,
-                                                         post=postgene)
-                        accession = '{pre}_{post}'.format(pre=preaccession,
-                                                          post=postaccession)
-                        gname = pregene
-            except ValueError:
-                # VanC_2_DQ022190
-                genename, allele, accession = name.split('_')
-                gname = genename
-        else:
-            if 'bla' in name or 'aac' in name or 'ARR' in name or 'POM' in name:
-                if 'OKP' in name or 'CTX' in name or 'OXY' in name:
-                    # >blaOKP_B_11_1_AM051161 yields gname: blaOKP-B-11, genename: blaOXP, allele: 1,
-                    # accession: AM051161
-                    gene, version1, version2, allele, accession = name.split('_')
-                    gname = '{g}-{v1}-{v2}'.format(g=gene,
-                                                   v1=version1,
-                                                   v2=version2)
-                    genename = gname
-                elif 'CMY' in name:
-                    # >blaCMY_12_1_Y16785 yields gname, genename: blaCMY, allele: 12
-                    gname, allele, version, accession = name.split('_')
-                    genename = gname
-                elif name == "aac(3)_Ib_aac(6')_Ib_1_AF355189":
-                    # >aac(3)_Ib_aac(6')_Ib_1_AF355189 yields gname, genename: aac(3)-Ib-aac(6')-Ib, allele:1,
-                    # accession: AF355189
-                    gene1, version1, gene2, version2, allele, accession = name.split('_')
-                    gname = '{g1}-{v1}-{g2}-{v2}'.format(g1=gene1,
-                                                         v1=version1,
-                                                         g2=gene2,
-                                                         v2=version2)
-                    genename = gname
-                elif 'alias' in name:
-                    # >blaSHV_5a_alias_blaSHV_9_1_S82452
-                    gene1, version1, alias, gene2, version2, allele, accession = name.split('_')
-                    gname = '{g1}-{v1}'.format(g1=gene1,
-                                               v1=version1)
-                    genename = gname
-                else:
-                    # Split the name on '_'s: ARR-2_1_HQ141279; gname, genename: ARR-2, allele: 1, accession: HQ141279
-                    try:
-                        genename, allele, accession = name.split('_')
-                        gname = genename
-                    except ValueError:
-                        try:
-                            # >blaACC_1_2_AM939420 yields gname: blaACC-1, genename: blaACC, allele: 2,
-                            # accession: AM939420
-                            genename, version, allele, accession = name.split('_')
-                            gname = '{g}-{v}'.format(g=genename,
-                                                     v=version)
-                        except ValueError:
-                            # >aac(2')_Ie_1_NC_011896 yields gname, genename: aac(2')-Ie, allele: 1,
-                            # accession: NC_011896
-                            genename, version, allele, preaccession, postaccession = name.split('_')
-                            gname = '{g}-{v}'.format(g=genename,
-                                                     v=version)
-                            genename = gname
-                            accession = '{preaccess}_{postaccess}'.format(preaccess=preaccession,
-                                                                          postaccess=postaccession)
-            else:
-                # Split the name on '_'s: ARR-2_1_HQ141279; gname, genename: ARR-2, allele: 1, accession: HQ141279
-                try:
-                    genename, allele, accession = name.split('_')
-                    gname = genename
-                # Some names have a slightly different naming scheme:
-                except ValueError:
-                    # tet(44)_1_NZ_ABDU01000081 yields gname, genename: tet(44), allele: 1,
-                    # accession: NZ_ABDU01000081
-                    genename, allele, preaccession, postaccession = name.split('_')
-                    accession = '{preaccess}_{postaccess}'.format(preaccess=preaccession,
-                                                                  postaccess=postaccession)
-                    gname = genename
-        return gname, genename, accession, allele
-
-    @staticmethod
-    def resistance(gname, genename, genedict, altgenedict):
-        """
-        Extracts the resistance phenotype from the dictionaries using the gene name
-        :param gname: Name of gene. Often the same as genename, but for certain entries it is longer
-        e.g. blaOKP-B-15 instead of blaOKP
-        :param genename: Name of gene e.g. blaOKP
-        :param genedict: Dictionary of gene:resistance
-        :param altgenedict: Dictionary of gene alternate name:resistance
-        :return: finalgene, finalresistance: gene name and associated resistance phenotype to be used in the report
-        """
-        # Use the same string splitting method as above to re-create the base name of the gene from the gene name
-        # e.g. aph(3'')-Ib yields aph
-        gene = gname.split('(')[0].split('-')[0]
-        # Set the final gene name as the genename variable - unless there is an alternative name (see below)
-        finalgene = genename
-        # Initialise the finalresistance variable
-        finalresistance = str()
-        # Iterate through all the resistance classes, and gene sets associated with each resistance class
-        for resistance, gene_set in genedict.items():
-            # Determine if the gene is present in the resistance class-associated gene set
-            if gene in gene_set or genename in gene_set:
-                # Set the resistance to return as the current resistance class
-                finalresistance = resistance
-                # Determine if there is an alternative name for this gene in the notes.txt file
-                try:
-                    alt_gene = altgenedict[gname]
-                    # Set the final name of the gene to be gene name (alternative name)
-                    finalgene = '{namegene} ({genealt})'.format(namegene=genename,
-                                                                genealt=alt_gene)
-                # Otherwise use the gene name
-                except KeyError:
-                    finalgene = genename
-        return finalgene, finalresistance
-
-
-def sequencenames(contigsfile):
-    """
-    Takes a multifasta file and returns a list of sequence names
-    :param contigsfile: multifasta of all sequences
-    :return: list of all sequence names
-    """
-    sequences = list()
-    for record in SeqIO.parse(open(contigsfile, "rU", encoding="iso-8859-15"), "fasta"):
-        sequences.append(record.id)
-    return sequences
-
-
-def objector(kw_dict, start):
-    metadata = MetadataObject()
-    for key, value in kw_dict.items():
-        setattr(metadata, key, value)
-    # Set the analysis type based on the arguments provided
-    if metadata.resfinder is True:
-        metadata.analysistype = 'resfinder'
-    elif metadata.virulencefinder is True:
-        metadata.analysistype = 'virulence'
-    # Warn that only one type of analysis can be perfomed at a time
-    elif metadata.resfinder is True and metadata.virulencefinder is True:
-        printtime('Cannot perform ResFinder and VirulenceFinder simultaneously. Please choose only one '
-                  'of the -R and -v flags', start)
-    # Default to GeneSeekr
-    else:
-        metadata.analysistype = 'geneseekr'
-    # Add the start time variable to the object
-    metadata.start = start
-    return metadata
-
-
-# noinspection PyProtectedMember
-def modify_usage_error(subcommand):
-    """
-    Method to append the help menu to a modified usage error when a subcommand is specified, but options are missing
-    """
-    import click
-    from click._compat import get_text_stderr
-    from click.utils import echo
-
-    def show(self, file=None):
-        import sys
-        if file is None:
-            file = get_text_stderr()
-        color = None
-        if self.ctx is not None:
-            color = self.ctx.color
-        echo('Error: %s\n' % self.format_message(), file=file, color=color)
-        # Set the sys.argv to be the first two arguments passed to the script if the subcommand was specified
-        arg2 = sys.argv[1] if sys.argv[1] in ['blastn', 'blastp', 'blastx', 'tblastn', 'tblastx'] else str()
-        sys.argv = [' '.join([sys.argv[0], arg2])] if arg2 else [sys.argv[0]]
-        # Call the help
-        subcommand(['--help'])
-
-    click.exceptions.UsageError.show = show
-
-
-class BLAST(object):
-
-    def seekr(self):
-        """
-        Run the methods in the proper order
-        """
-        self.blast_db()
-        self.run_blast()
-        self.parse_results()
-        self.create_reports()
-        self.clean_object()
-        printtime('{at} analyses complete'.format(at=self.analysistype), self.start)
-
-    def blast_db(self):
-        """
-        Make blast databases (if necessary)
-        """
-        printtime('Creating {at} blast databases as required'
-                  .format(at=self.analysistype),
-                  self.start)
-        for sample in self.metadata:
-            self.geneseekr.makeblastdb(sample[self.analysistype].combinedtargets,
-                                       self.program)
-            self.targetfolders, self.targetfiles, self.records = \
-                self.geneseekr.target_folders(self.metadata,
-                                              self.analysistype)
-
-    def run_blast(self):
-        """
-        Perform BLAST analyses
-        """
-        printtime('Performing {program} analyses on {at} targets'
-                  .format(program=self.program,
-                          at=self.analysistype),
-                  self.start)
-        self.metadata = self.geneseekr.run_blast(self.metadata,
-                                                 self.analysistype,
-                                                 self.program,
-                                                 self.outfmt,
-                                                 evalue=self.evalue,
-                                                 num_threads=self.cpus)
-
-    def parse_results(self):
-        """
-        Parse the output depending on whether unique results are desired
-        """
-        printtime('Parsing {program} results for {at} targets'
-                  .format(program=self.program,
-                          at=self.analysistype),
-                  self.start)
-        if self.unique:
-            # Run the unique blast parsing module
-            self.metadata = self.geneseekr.unique_parse_blast(self.metadata,
-                                                              self.analysistype,
-                                                              self.fieldnames,
-                                                              self.cutoff,
-                                                              self.program)
-            # Filter the unique hits
-            self.metadata = self.geneseekr.filter_unique(self.metadata,
-                                                         self.analysistype)
-        else:
-            # Run the standard blast parsing module
-            self.metadata = self.geneseekr.parse_blast(self.metadata,
-                                                       self.analysistype,
-                                                       self.fieldnames,
-                                                       self.cutoff,
-                                                       self.program)
-
-    def create_reports(self):
-        """
-        Create reports
-        """
-        # Create dictionaries
-        self.metadata = self.geneseekr.dict_initialise(self.metadata,
-                                                       self.analysistype)
-        # Create reports
-        printtime('Creating {at} reports'.format(at=self.analysistype), self.start)
-        if 'resfinder' in self.analysistype:
-            # ResFinder-specific report
-            self.metadata = self.geneseekr.resfinder_reporter(self.metadata,
-                                                              self.analysistype,
-                                                              self.targetfolders,
-                                                              self.reportpath,
-                                                              self.align,
-                                                              self.targetfiles,
-                                                              self.records,
-                                                              self.program)
-        elif 'virulence' in self.analysistype:
-            # VirulenceFinder-specific report
-            self.geneseekr.virulencefinder_reporter(self.metadata,
-                                                    self.analysistype,
-                                                    self.reportpath)
-        else:
-            # GeneSeekr-specific report
-            self.metadata = self.geneseekr.reporter(self.metadata,
-                                                    self.analysistype,
-                                                    self.reportpath,
-                                                    self.align,
-                                                    self.targetfiles,
-                                                    self.records,
-                                                    self.program)
-
-    # noinspection PyNoneFunctionAssignment
-    def clean_object(self):
-        """
-        Remove certain attributes from the object; they take up too much room on the .json report
-        """
-        self.metadata = self.geneseekr.clean_object(self.metadata,
-                                                    self.analysistype)
-
-    def __init__(self, args, analysistype='geneseekr', cutoff=70, program='blastn', genus_specific=False):
-        try:
-            args.program = args.program
-        except AttributeError:
-            args.program = program
-        self.program = args.program
-        try:
-            self.cutoff = args.cutoff
-        except AttributeError:
-            self.cutoff = cutoff
-        try:
-            self.cpus = args.numthreads if args.numthreads else multiprocessing.cpu_count() - 1
-        except AttributeError:
-            self.cpus = args.cpus
-        try:
-            self.align = args.align
-        except AttributeError:
-            self.align = True
-        if analysistype == 'geneseekr':
-            try:
-                self.analysistype = args.analysistype
             except AttributeError:
-                self.analysistype = analysistype
-                args.analysistype = analysistype
-        else:
-            self.analysistype = analysistype
-        try:
-            self.resfinder = args.resfinder
-        except AttributeError:
-            self.resfinder = False
-        try:
-            self.virulencefinder = args.virulencefinder
-        except AttributeError:
-            self.virulencefinder = False
-        # Automatically set self.unique to true for ResFinder or VirulenceFinder analyses
-        self.unique = True if self.resfinder or self.virulencefinder or 'resfinder' in self.analysistype \
-            or self.analysistype == 'virulencefinder' else args.unique
-        try:
-            self.start = args.start
-        except AttributeError:
-            self.start = args.starttime
-        try:
-            self.evalue = args.evalue
-        except AttributeError:
-            self.evalue = '1E-05'
-        try:
-            self.sequencepath = args.sequencepath
-        except AttributeError:
-            self.sequencepath = str()
-        try:
-            self.targetpath = os.path.join(args.reffilepath, self.analysistype)
-        except (AttributeError, KeyError):
-            self.targetpath = args.targetpath
-        self.reportpath = args.reportpath
-        self.genus_specific = genus_specific
-        try:
-            self.metadata = args.runmetadata.samples
-            parse = Parser(self)
-            if not self.genus_specific:
-                parse.target_find()
-            parse.metadata_populate()
-        except (AttributeError, KeyError):
-            # Run the Parser class from the GeneSeekr methods script to create lists of the database targets, and
-            # combined targets, fasta sequences, and metadata objects.
-            parse = Parser(self)
-            parse.main()
-        # Extract the variables from the object
-        self.reportpath = parse.reportpath
-        self.targets = parse.targets
-        self.strains = parse.strains
-        self.combinedtargets = parse.combinedtargets
-        self.metadata = parse.metadata
-        # Fields used for custom outfmt 6 BLAST output:
-        self.fieldnames = ['query_id', 'subject_id', 'positives', 'mismatches', 'gaps',
-                           'evalue', 'bit_score', 'subject_length', 'alignment_length',
-                           'query_start', 'query_end', 'query_sequence',
-                           'subject_start', 'subject_end', 'subject_sequence']
-        self.outfmt = "'6 qseqid sseqid positive mismatch gaps " \
-                      "evalue bitscore slen length qstart qend qseq sstart send sseq'"
-        self.targetfolders = set()
-        self.targetfiles = list()
-        self.records = dict()
-        # Create the GeneSeekr object
-        self.geneseekr = GeneSeekr()
-        printtime('Performing {program} analyses on {at} targets'
-                  .format(program=self.program,
-                          at=self.analysistype),
-                  self.start)
+                pass
