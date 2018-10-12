@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
-from geneseekr.geneseekr import modify_usage_error, objector, BLAST
+from accessoryFunctions.accessoryFunctions import SetupLogging
+from geneseekr.parser import modify_usage_error, objector
+from geneseekr.blast import BLAST
 from time import time
 import click
 import sys
 
 __author__ = 'adamkoziol'
 
+SetupLogging()
 start = time()
 
 # https://stackoverflow.com/a/40195800
