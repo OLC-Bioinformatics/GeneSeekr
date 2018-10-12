@@ -1,8 +1,8 @@
 name: geneseekr
 channels:
   - conda-forge
-  - olcbioinformatics
   - bioconda
+  - olcbioinformatics
   - defaults
 dependencies:
   - biopython=1.70=np112py35_1
@@ -98,5 +98,18 @@ dependencies:
   - zlib=1.2.11=ha838bed_2
   - geneseekr=0.1.1=py35h39e3cac_0
   - olctools=0.4.0=py35_0
+  - pip:
+    - confindr==0.4.1
+    - cycler==0.10.0
+    - interop==1.1.4
+    - kiwisolver==1.0.1
+    - matplotlib==3.0.0
+    - pandas==0.23.4
+    - pyparsing==2.2.2
+    - pysam==0.15.1
+    - rauth==0.7.3
+    - scipy==1.1.0
+    - seaborn==0.9.0
+    - sipprverse==0.0.79
 prefix: /home/adamkoziol/miniconda/envs/geneseekr
 
