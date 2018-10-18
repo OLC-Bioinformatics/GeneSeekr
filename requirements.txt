@@ -40,7 +40,7 @@ more-itertools==4.2.0
 msgpack-python==0.5.6
 nbformat==4.4.0
 numpy==1.15.0
-OLCTools==0.5.1
+OLCTools==0.5.4
 olefile==0.45.1
 pandas==0.23.4
 Pillow==5.1.0
