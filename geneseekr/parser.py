@@ -134,7 +134,7 @@ def sequencenames(contigsfile):
     :return: list of all sequence names
     """
     sequences = list()
-    for record in SeqIO.parse(open(contigsfile, "rU", encoding="iso-8859-15"), "fasta"):
+    for record in SeqIO.parse(open(contigsfile, 'r', encoding='iso-8859-15'), 'fasta'):
         sequences.append(record.id)
     return sequences
 
