@@ -11,6 +11,7 @@ from Bio.Alphabet import IUPAC
 from Bio import pairwise2
 from Bio.Seq import Seq
 from Bio import SeqIO
+from click import progressbar
 from csv import DictReader
 from glob import glob
 import xlsxwriter
@@ -97,81 +98,82 @@ class GeneSeekr(object):
         :param num_alignments: Number of alignments to perform in BLAST analyses
         :return: Updated metadata object
         """
-        for sample in metadata:
-            # Run the BioPython BLASTn module with the genome as query, fasta (target gene) as db.
-            make_path(sample[analysistype].reportdir)
-            # Set the name and path of the BLAST report as reportdir/samplename_blastprogram.csv
-            sample[analysistype].report = os.path.join(
-                sample[analysistype].reportdir, '{name}_{program}.csv'.format(name=sample.name,
-                                                                              program=program))
-            # Check the size of the report (if it exists). If it has size 0, something went wrong on a previous
-            # iteration of the script. Delete the empty file in preparation for another try
-            try:
-                size = os.path.getsize(sample[analysistype].report)
-                # If a report was created, but no results entered - program crashed, or no sequences passed thresholds,
-                # remove the report, and run the blast analyses again
-                if size == 0:
-                    os.remove(sample[analysistype].report)
-            except FileNotFoundError:
-                pass
-            # Split the extension from the file path
-            db = os.path.splitext(sample[analysistype].combinedtargets)[0]
-            # Create the command line argument using the appropriate BioPython BLAST wrapper
-            if program == 'blastn':
-                blast = self.blastn_commandline(sample=sample,
-                                                analysistype=analysistype,
-                                                db=db,
-                                                evalue=evalue,
-                                                num_alignments=num_alignments,
-                                                num_threads=num_threads,
-                                                outfmt=outfmt)
-            elif program == 'blastp':
-                blast = self.blastp_commandline(sample=sample,
-                                                analysistype=analysistype,
-                                                db=db,
-                                                evalue=evalue,
-                                                num_alignments=num_alignments,
-                                                num_threads=num_threads,
-                                                outfmt=outfmt)
-            elif program == 'blastx':
-                blast = self.blastx_commandline(sample=sample,
-                                                analysistype=analysistype,
-                                                db=db,
-                                                evalue=evalue,
-                                                num_alignments=num_alignments,
-                                                num_threads=num_threads,
-                                                outfmt=outfmt)
-            elif program == 'tblastn':
-                blast = self.tblastn_commandline(sample=sample,
-                                                 analysistype=analysistype,
-                                                 db=db,
-                                                 evalue=evalue,
-                                                 num_alignments=num_alignments,
-                                                 num_threads=num_threads,
-                                                 outfmt=outfmt)
-            elif program == 'tblastx':
-                blast = self.tblastx_commandline(sample=sample,
-                                                 analysistype=analysistype,
-                                                 db=db,
-                                                 evalue=evalue,
-                                                 num_alignments=num_alignments,
-                                                 num_threads=num_threads,
-                                                 outfmt=outfmt)
-            else:
-                blast = str()
-            assert blast, 'Something went wrong, the BLAST program you provided ({program}) isn\'t supported'\
-                .format(program=program)
-            # Save the blast command in the metadata
-            sample[analysistype].blastcommand = str(blast)
-            # Only run blast if the report doesn't exist
-            if not os.path.isfile(sample[analysistype].report):
+        with progressbar(metadata) as bar:
+            for sample in bar:
+                # Run the BioPython BLASTn module with the genome as query, fasta (target gene) as db.
+                make_path(sample[analysistype].reportdir)
+                # Set the name and path of the BLAST report as reportdir/samplename_blastprogram.csv
+                sample[analysistype].report = os.path.join(
+                    sample[analysistype].reportdir, '{name}_{program}.csv'.format(name=sample.name,
+                                                                                  program=program))
+                # Check the size of the report (if it exists). If it has size 0, something went wrong on a previous
+                # iteration of the script. Delete the empty file in preparation for another try
                 try:
-                    blast()
-                except ApplicationError:
-                    try:
+                    size = os.path.getsize(sample[analysistype].report)
+                    # If a report was created, but no results entered - program crashed, or no sequences passed
+                    # thresholds, remove the report, and run the blast analyses again
+                    if size == 0:
                         os.remove(sample[analysistype].report)
-                    except (IOError, ApplicationError):
-                        pass
+                except FileNotFoundError:
+                    pass
+                # Split the extension from the file path
+                db = os.path.splitext(sample[analysistype].combinedtargets)[0]
+                # Create the command line argument using the appropriate BioPython BLAST wrapper
+                if program == 'blastn':
+                    blast = self.blastn_commandline(sample=sample,
+                                                    analysistype=analysistype,
+                                                    db=db,
+                                                    evalue=evalue,
+                                                    num_alignments=num_alignments,
+                                                    num_threads=num_threads,
+                                                    outfmt=outfmt)
+                elif program == 'blastp':
+                    blast = self.blastp_commandline(sample=sample,
+                                                    analysistype=analysistype,
+                                                    db=db,
+                                                    evalue=evalue,
+                                                    num_alignments=num_alignments,
+                                                    num_threads=num_threads,
+                                                    outfmt=outfmt)
+                elif program == 'blastx':
+                    blast = self.blastx_commandline(sample=sample,
+                                                    analysistype=analysistype,
+                                                    db=db,
+                                                    evalue=evalue,
+                                                    num_alignments=num_alignments,
+                                                    num_threads=num_threads,
+                                                    outfmt=outfmt)
+                elif program == 'tblastn':
+                    blast = self.tblastn_commandline(sample=sample,
+                                                     analysistype=analysistype,
+                                                     db=db,
+                                                     evalue=evalue,
+                                                     num_alignments=num_alignments,
+                                                     num_threads=num_threads,
+                                                     outfmt=outfmt)
+                elif program == 'tblastx':
+                    blast = self.tblastx_commandline(sample=sample,
+                                                     analysistype=analysistype,
+                                                     db=db,
+                                                     evalue=evalue,
+                                                     num_alignments=num_alignments,
+                                                     num_threads=num_threads,
+                                                     outfmt=outfmt)
+                else:
+                    blast = str()
+                assert blast, 'Something went wrong, the BLAST program you provided ({program}) isn\'t supported'\
+                    .format(program=program)
+                # Save the blast command in the metadata
+                sample[analysistype].blastcommand = str(blast)
+                # Only run blast if the report doesn't exist
+                if not os.path.isfile(sample[analysistype].report):
+                    try:
+                        blast()
+                    except ApplicationError:
+                        try:
+                            os.remove(sample[analysistype].report)
+                        except (IOError, ApplicationError):
+                            pass
         # Return the updated metadata object
         return metadata
 
@@ -755,7 +757,7 @@ class GeneSeekr(object):
         headers.append('nt_sequence') if program == 'blastn' else headers.append('aa_sequence')
         for sample in metadata:
             sample[analysistype].sampledata = list()
-            sample[analysistype].pipelineresults = list()
+            sample[analysistype].pipelineresults = dict()
             # Process the sample only if the script could find targets
             if sample[analysistype].blastlist != 'NA' and sample[analysistype].blastlist:
                 for result in sample[analysistype].blastlist:
@@ -781,10 +783,18 @@ class GeneSeekr(object):
                     data.append(result['query_id'])
                     data.append('...'.join([str(result['low']), str(result['high'])]))
                     # Populate the .pipelineresults attribute for compatibility with the assembly pipeline
-                    sample[analysistype].pipelineresults.append(
-                        '{rgene} ({pid}%) {rclass}'.format(rgene=genename,
-                                                           pid=percentid,
-                                                           rclass=resistance))
+                    if percentid > 80:
+                        try:
+                            if genename not in sample[analysistype].pipelineresults[resistance]:
+                                sample[analysistype].pipelineresults[resistance]\
+                                    .append('{rgene} ({pid}%)'.format(rgene=genename,
+                                                                      pid=percentid))
+                        except KeyError:
+                            sample[analysistype].pipelineresults[resistance] = list()
+                            if genename not in sample[analysistype].pipelineresults[resistance]:
+                                sample[analysistype].pipelineresults[resistance]\
+                                    .append('{rgene} ({pid}%)'.format(rgene=genename,
+                                                                      pid=percentid))
                     try:
                         # Only if the alignment option is selected, for inexact results, add alignments
                         if align and percentid != 100.00:
