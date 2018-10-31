@@ -49,7 +49,10 @@ click_nt_options = [
                  help='Perform ResFinder-like analyses'),
     click.option('-V', '--virulencefinder',
                  is_flag=True,
-                 help='Perform VirulenceFinder-like analyses')
+                 help='Perform VirulenceFinder-like analyses'),
+    click.option('-M', '--MLST',
+                 is_flag=True,
+                 help='Perform allele typing (e.g. rMLST, cgMLST, wgMLST, MLST, etc.')
 ]
 
 
@@ -73,9 +76,10 @@ def blastn(**kwargs):
     """
     nt query: nt db
     """
-    metadata = objector(kwargs, start)
+    metadata, pipeline = objector(kwargs, start)
     metadata.program = 'blastn'
-    geneseekr = BLAST(metadata)
+    geneseekr = BLAST(args=metadata,
+                      pipeline=pipeline)
     geneseekr.seekr()
 
 
@@ -85,9 +89,10 @@ def blastp(**kwargs):
     """
     protein query: protein db
     """
-    metadata = objector(kwargs, start)
+    metadata, pipeline = objector(kwargs, start)
     metadata.program = 'blastp'
-    geneseekr = BLAST(metadata)
+    geneseekr = BLAST(args=metadata,
+                      pipeline=pipeline)
     geneseekr.seekr()
 
 
@@ -97,9 +102,10 @@ def blastx(**kwargs):
     """
     translated nt query: protein db
     """
-    metadata = objector(kwargs, start)
+    metadata, pipeline = objector(kwargs, start)
     metadata.program = 'blastx'
-    geneseekr = BLAST(metadata)
+    geneseekr = BLAST(args=metadata,
+                      pipeline=pipeline)
     geneseekr.seekr()
 
 
@@ -110,9 +116,10 @@ def tblastn(**kwargs):
     """
     protein query: translated nt db
     """
-    metadata = objector(kwargs, start)
+    metadata, pipeline = objector(kwargs, start)
     metadata.program = 'tblastn'
-    geneseekr = BLAST(metadata)
+    geneseekr = BLAST(args=metadata,
+                      pipeline=pipeline)
     geneseekr.seekr()
 
 
@@ -123,9 +130,10 @@ def tblastx(**kwargs):
     """
     translated nt query: translated nt db
     """
-    metadata = objector(kwargs, start)
+    metadata, pipeline = objector(kwargs, start)
     metadata.program = 'tblastx'
-    geneseekr = BLAST(metadata)
+    geneseekr = BLAST(args=metadata,
+                      pipeline=pipeline)
     geneseekr.seekr()
 
 
