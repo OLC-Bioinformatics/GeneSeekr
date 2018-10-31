@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from accessoryFunctions.accessoryFunctions import make_path, run_subprocess
 from accessoryFunctions.resistance import ResistanceNotes
+from sipprverse_reporter.reports import Reports
 from biotools.bbtools import kwargs_to_string
 from Bio.Blast.Applications import NcbiblastnCommandline, NcbiblastxCommandline, NcbiblastpCommandline, \
     NcbitblastnCommandline, NcbitblastxCommandline
@@ -15,6 +16,7 @@ from click import progressbar
 from csv import DictReader
 from glob import glob
 import xlsxwriter
+import operator
 import logging
 import csv
 import sys
@@ -51,9 +53,10 @@ class GeneSeekr(object):
                     dbtype=dbtype,
                     output=output,
                     options=options)
-        logging.debug(cmd)
         # Check if database already exists
         if not os.path.isfile('{}.nhr'.format(output)):
+            if output != 'NA':
+                logging.debug(cmd)
             out, err = run_subprocess(cmd)
         else:
             out = str()
@@ -86,7 +89,8 @@ class GeneSeekr(object):
                 records[targetfile] = SeqIO.to_dict(SeqIO.parse(targetfile, 'fasta'))
         return targetfolders, targetfiles, records
 
-    def run_blast(self, metadata, analysistype, program, outfmt, evalue='1E-5', num_threads=12, num_alignments=1000000):
+    def run_blast(self, metadata, analysistype, program, outfmt, evalue='1E-5', num_threads=12, num_alignments=1000000,
+                  perc_identity=70, task='blastn'):
         """
         Runs BLAST on all the samples in the metadata object
         :param metadata: Metadata object
@@ -96,6 +100,9 @@ class GeneSeekr(object):
         :param evalue: e-value cut-off for BLAST analyses
         :param num_threads: Number of threads to use for BLAST analyses
         :param num_alignments: Number of alignments to perform in BLAST analyses
+        :param perc_identity: Percent identity cutoff
+        :param task: For short sequences being analysed with BLASTn, allow for the blastn-short parameter to be
+        specified,
         :return: Updated metadata object
         """
         with progressbar(metadata) as bar:
@@ -126,7 +133,9 @@ class GeneSeekr(object):
                                                     evalue=evalue,
                                                     num_alignments=num_alignments,
                                                     num_threads=num_threads,
-                                                    outfmt=outfmt)
+                                                    outfmt=outfmt,
+                                                    perc_identity=perc_identity,
+                                                    task=task)
                 elif program == 'blastp':
                     blast = self.blastp_commandline(sample=sample,
                                                     analysistype=analysistype,
@@ -134,7 +143,8 @@ class GeneSeekr(object):
                                                     evalue=evalue,
                                                     num_alignments=num_alignments,
                                                     num_threads=num_threads,
-                                                    outfmt=outfmt)
+                                                    outfmt=outfmt,
+                                                    perc_identity=perc_identity)
                 elif program == 'blastx':
                     blast = self.blastx_commandline(sample=sample,
                                                     analysistype=analysistype,
@@ -142,7 +152,8 @@ class GeneSeekr(object):
                                                     evalue=evalue,
                                                     num_alignments=num_alignments,
                                                     num_threads=num_threads,
-                                                    outfmt=outfmt)
+                                                    outfmt=outfmt,
+                                                    perc_identity=perc_identity)
                 elif program == 'tblastn':
                     blast = self.tblastn_commandline(sample=sample,
                                                      analysistype=analysistype,
@@ -150,7 +161,8 @@ class GeneSeekr(object):
                                                      evalue=evalue,
                                                      num_alignments=num_alignments,
                                                      num_threads=num_threads,
-                                                     outfmt=outfmt)
+                                                     outfmt=outfmt,
+                                                     perc_identity=perc_identity)
                 elif program == 'tblastx':
                     blast = self.tblastx_commandline(sample=sample,
                                                      analysistype=analysistype,
@@ -158,7 +170,8 @@ class GeneSeekr(object):
                                                      evalue=evalue,
                                                      num_alignments=num_alignments,
                                                      num_threads=num_threads,
-                                                     outfmt=outfmt)
+                                                     outfmt=outfmt,
+                                                     perc_identity=perc_identity)
                 else:
                     blast = str()
                 assert blast, 'Something went wrong, the BLAST program you provided ({program}) isn\'t supported'\
@@ -178,43 +191,48 @@ class GeneSeekr(object):
         return metadata
 
     @staticmethod
-    def blastn_commandline(sample, analysistype, db, evalue, num_alignments, num_threads, outfmt):
+    def blastn_commandline(sample, analysistype, db, evalue, num_alignments, num_threads, outfmt, perc_identity,
+                           task='blastn'):
         # BLAST command line call. Note the high number of default alignments.
         # Due to the fact that all the targets are combined into one database, this is to ensure that all potential
         # alignments are reported. Also note the custom outfmt: the doubled quotes are necessary to get it work
         blastn = NcbiblastnCommandline(query=sample.general.bestassemblyfile,
                                        db=db,
                                        evalue=evalue,
+                                       task=task,
                                        num_alignments=num_alignments,
                                        num_threads=num_threads,
                                        outfmt=outfmt,
+                                       perc_identity=perc_identity,
                                        out=sample[analysistype].report)
         return blastn
 
     @staticmethod
-    def blastx_commandline(sample, analysistype, db, evalue, num_alignments, num_threads, outfmt):
+    def blastx_commandline(sample, analysistype, db, evalue, num_alignments, num_threads, outfmt, perc_identity):
         blastx = NcbiblastxCommandline(query=sample.general.bestassemblyfile,
                                        db=db,
                                        evalue=evalue,
                                        num_alignments=num_alignments,
                                        num_threads=num_threads,
                                        outfmt=outfmt,
+                                       perc_identity=perc_identity,
                                        out=sample[analysistype].report)
         return blastx
 
     @staticmethod
-    def blastp_commandline(sample, analysistype, db, evalue, num_alignments, num_threads, outfmt):
+    def blastp_commandline(sample, analysistype, db, evalue, num_alignments, num_threads, outfmt, perc_identity):
         blastp = NcbiblastpCommandline(query=sample.general.bestassemblyfile,
                                        db=db,
                                        evalue=evalue,
                                        num_alignments=num_alignments,
                                        num_threads=num_threads,
                                        outfmt=outfmt,
+                                       perc_identity=perc_identity,
                                        out=sample[analysistype].report)
         return blastp
 
     @staticmethod
-    def tblastn_commandline(sample, analysistype, db, evalue, num_alignments, num_threads, outfmt):
+    def tblastn_commandline(sample, analysistype, db, evalue, num_alignments, num_threads, outfmt, perc_identity):
         # BLAST command line call. Note the high number of default alignments.
         # Due to the fact that all the targets are combined into one database, this is to ensure that all potential
         # alignments are reported. Also note the custom outfmt: the doubled quotes are necessary to get it work
@@ -224,11 +242,12 @@ class GeneSeekr(object):
                                          num_alignments=num_alignments,
                                          num_threads=num_threads,
                                          outfmt=outfmt,
+                                         perc_identity=perc_identity,
                                          out=sample[analysistype].report)
         return tblastn
 
     @staticmethod
-    def tblastx_commandline(sample, analysistype, db, evalue, num_alignments, num_threads, outfmt):
+    def tblastx_commandline(sample, analysistype, db, evalue, num_alignments, num_threads, outfmt, perc_identity):
         # BLAST command line call. Note the high number of default alignments.
         # Due to the fact that all the targets are combined into one database, this is to ensure that all potential
         # alignments are reported. Also note the custom outfmt: the doubled quotes are necessary to get it work
@@ -238,6 +257,7 @@ class GeneSeekr(object):
                                          num_alignments=num_alignments,
                                          num_threads=num_threads,
                                          outfmt=outfmt,
+                                         perc_identity=perc_identity,
                                          out=sample[analysistype].report)
         return tblastx
 
@@ -295,6 +315,102 @@ class GeneSeekr(object):
                     sample[analysistype].blastresults = 'NA'
             except FileNotFoundError:
                 sample[analysistype].blastresults = 'NA'
+        return metadata
+
+    @staticmethod
+    def sixteens_parser(metadata, analysistype, fieldnames, cutoff, program):
+        """
+        Custom 16S parsing scheme - will determine the genus of all the BLAST hits (max 1000 returned from BLAST.
+        :param metadata: Metadata object
+        :param analysistype: Current analysis type
+        :param fieldnames: List of column names in BLAST report
+        :param cutoff: Percent identity threshold
+        :param program: BLAST program used in the analyses
+        :return: Updated metadata object
+        """
+        dbrecords = dict()
+        for sample in metadata:
+            try:
+                # Load the NCBI 16S reference database as a dictionary
+                dbrecords = SeqIO.to_dict(SeqIO.parse(sample[analysistype].combinedtargets, 'fasta'))
+                break
+            except AttributeError:
+                pass
+        for sample in metadata:
+            # Initialise a dictionary to store all the target sequences
+            sample[analysistype].targetsequence = dict()
+            # Initialise a dictionary to store the number of times a genus is the best hit
+            sample[analysistype].frequency = dict()
+            try:
+                # Open the sequence profile file as a dictionary
+                blastdict = DictReader(open(sample[analysistype].report), fieldnames=fieldnames, dialect='excel-tab')
+                resultdict = dict()
+                # Go through each BLAST result
+                for row in blastdict:
+                    # Create the subject length variable - if the sequences are DNA (e.g. blastn), use the subject
+                    # length as usual; if the sequences are protein (e.g. tblastx), use the subject length / 3
+                    if program == 'blastn' or program == 'blastp' or program == 'blastx':
+                        subject_length = float(row['subject_length'])
+
+                    else:
+                        subject_length = float(row['subject_length']) / 3
+                    # Calculate the percent identity and extract the bitscore from the row
+                    # Percent identity is the (length of the alignment - number of mismatches) / total subject length
+                    percentidentity = float('{:0.2f}'.format((float(row['positives']) - float(row['gaps'])) /
+                                                             subject_length * 100))
+                    target = row['subject_id']
+                    # Extract the genus name. Use the subject id as a key in the dict of the reference db.
+                    # It will return the record e.g. gi|1018196593|ref|NR_136472.1| Escherichia marmotae
+                    # strain HT073016 16S ribosomal RNA, partial sequence
+                    # This full description can be manipulated to extract the genus e.g. Escherichia
+                    genus = dbrecords[target].description.split('|')[-1].split()[0]
+                    # Increment the number of times this genus was found, or initialise the dictionary with this
+                    # genus the first time it is seen
+                    try:
+                        sample[analysistype].frequency[genus] += 1
+                    except KeyError:
+                        sample[analysistype].frequency[genus] = 1
+                    try:
+                        resultdict[dbrecords[target].description] += 1
+                    except KeyError:
+                        resultdict[dbrecords[target].description] = 1
+                    # Sort the dictionary based on the number of times a genus is seen
+                    sample[analysistype].sortedgenera = sorted(sample[analysistype].frequency.items(),
+                                                               key=operator.itemgetter(1), reverse=True)
+                    try:
+                        # Extract the top result, and set it as the genus of the sample
+                        sample[analysistype].genus = sample[analysistype].sortedgenera[0][0]
+                        # Previous code relies on having the closest refseq genus, so set this as above
+                        sample.general.closestrefseqgenus = sample[analysistype].genus
+                        sample.general.referencegenus = sample[analysistype].genus
+                    except IndexError:
+                        # Populate attributes with 'NA'
+                        sample[analysistype].sortedgenera = 'NA'
+                        sample[analysistype].genus = 'NA'
+                        sample.general.closestrefseqgenus = 'NA'
+                        sample.general.referencegenus = 'NA'
+                    # If the percent identity is greater than the cutoff
+                    if percentidentity >= cutoff:
+                        # Update the dictionary with the target and percent identity
+                        resultdict.update({target: percentidentity})
+                        # Determine if the orientation of the sequence is reversed compared to the reference
+                        if int(row['subject_end']) < int(row['subject_start']):
+                            # Create a sequence object using Biopython
+                            seq = Seq(row['query_sequence'], IUPAC.unambiguous_dna)
+                            # Calculate the reverse complement of the sequence
+                            querysequence = str(seq.reverse_complement())
+                        # If the sequence is not reversed, use the sequence as it is in the output
+                        else:
+                            querysequence = row['query_sequence']
+                        # Add the sequence in the correct orientation to the sample
+                        sample[analysistype].targetsequence[target] = querysequence
+                # Add the percent identity to the object
+                sample[analysistype].blastresults = resultdict
+                # Populate missing results with 'NA' values
+                if len(resultdict) == 0:
+                    sample[analysistype].blastresults = dict()
+            except FileNotFoundError:
+                sample[analysistype].blastresults = dict()
         return metadata
 
     @staticmethod
@@ -478,7 +594,7 @@ class GeneSeekr(object):
                         # Add the best hit to the .blastresults attribute of the object
                         if row['percentidentity'] == max(resultdict[contig][location]) and not multiple \
                                 and row['subject_id'] not in genes:
-                            # Update the lsit with the blast results
+                            # Update the list with the blast results
                             sample[analysistype].blastlist.append(row)
                             results.update({row['subject_id']: row['percentidentity']})
                             genes.append(row['subject_id'])
@@ -971,6 +1087,228 @@ class GeneSeekr(object):
             report.write(header)
             report.write(data)
 
+    @staticmethod
+    def sixteens_reporter(metadata, analysistype, reportpath):
+        """
+        Custom reports for VirulenceFinder analyses. These reports link the gene(s) found to their virulence phenotypes
+        :param metadata: Metadata object
+        :param analysistype: Current analysis type
+        :param reportpath: Path of folder in which report is to be created
+        """
+        # Find the best 16S match
+        for sample in metadata:
+            if sample.general.bestassemblyfile != 'NA':
+                if sample[analysistype].blastresults:
+                    # Sort the dictionary based on the percent identity - set the highest results as the best hit
+                    sample[analysistype].besthit = sorted(sample[analysistype].blastresults.items(),
+                                                          key=operator.itemgetter(1), reverse=True)[0]
+                else:
+                    sample[analysistype].besthit = str()
+            else:
+                sample[analysistype].besthit = str()
+        # Create the report
+        with open(os.path.join(reportpath, 'sixteens.csv'), 'w') as report:
+            header = 'Strain,Gene,PercentIdentity,Genus\n'
+            data = ''
+            for sample in metadata:
+                if sample.general.bestassemblyfile != 'NA':
+                    if sample[analysistype].besthit:
+                        sample[analysistype].sixteens_match = sample[analysistype].besthit[0].replace(',', '')
+                        data += '{},'.format(sample.name)
+                        multiple = False
+                        if multiple:
+                            data += ','
+                        data += '{gene},{pi},{genus}\n' \
+                            .format(gene=sample[analysistype].sixteens_match,
+                                    pi=sample[analysistype].besthit[1],
+                                    genus=sample.general.closestrefseqgenus)
+                    else:
+                        data += '{}\n'.format(sample.name)
+                else:
+                    data += '{}\n'.format(sample.name)
+            report.write(header)
+            report.write(data)
+        # Return the updated metadata object
+        return metadata
+
+    @staticmethod
+    def gdcs_reporter(metadata, analysistype, reportpath):
+        """
+        Creates a report of the GDCS results
+        :param metadata: Metadata object
+        :param analysistype: The variable to use when accessing attributes in the metadata object
+        :param reportpath: Path of folder in which report is to be created
+        """
+        logging.info('Creating {} report'.format(analysistype))
+        # Initialise list to store all the GDCS genes, and genera in the analysis
+        gdcs = list()
+        genera = list()
+        for sample in metadata:
+            sample[analysistype].faidict = dict()
+            if sample.general.bestassemblyfile != 'NA':
+                if os.path.isdir(sample[analysistype].targetpath):
+                    # Update the fai dict with all the genes in the analysis, rather than just those with baited hits
+                    Reports.gdcs_fai(sample)
+                    sample[analysistype].createreport = True
+                    # Determine which genera are present in the analysis
+                    if sample.general.closestrefseqgenus not in genera:
+                        genera.append(sample.general.closestrefseqgenus)
+                    try:
+                        # Add all the GDCS genes to the list
+                        for gene in sorted(sample[analysistype].faidict):
+                            if gene not in gdcs:
+                                gdcs.append(gene)
+                    except AttributeError:
+                        sample[analysistype].createreport = False
+                else:
+                    sample[analysistype].createreport = False
+            else:
+                sample[analysistype].createreport = False
+                sample.general.incomplete = True
+        header = 'Strain,Genus,Matches,Pass/Fail,{},\n'.format(','.join(gdcs))
+        data = str()
+        with open(os.path.join(reportpath, '{}.csv'.format(analysistype)), 'w') as report:
+            # Sort the samples in the report based on the closest refseq genus e.g. all samples with the same genus
+            # will be grouped together in the report
+            for genus in genera:
+                for sample in metadata:
+                    if sample.general.closestrefseqgenus == genus:
+                        if sample[analysistype].createreport:
+                            sample[analysistype].totaldepth = list()
+                            # Add the sample to the report if it matches the current genus
+                            # if genus == sample.general.closestrefseqgenus:
+                            data += '{},{},'.format(sample.name, genus)
+                            # Initialise a variable to store the number of GDCS genes were matched
+                            count = 0
+                            # As I want the count to be in the report before all the gene results, this string will
+                            # store the specific sample information, and will be added to data once count is known
+                            specific = str()
+                            for gene in sorted(gdcs):
+                                # As there are different genes present in the GDCS databases for each organism of
+                                # interest, genes that did not match because they're absent in the specific database are
+                                # indicated using an X
+                                if gene not in [result for result in sample[analysistype].faidict]:
+                                    specific += 'X,'
+                                else:
+                                    try:
+                                        specific += '{p_id},'.format(p_id=sample[analysistype].blastresults[gene])
+                                        # Report the necessary information for each gene result
+                                        count += 1
+                                    # If the gene was missing from the results attribute, add a - to the cell
+                                    except (KeyError, AttributeError):
+                                        specific += '-,'
+                            # Determine whether the sample pass the necessary quality criteria:
+                            # Pass, all GDCS, mean coverage greater than 20X coverage;
+                            # ?: Indeterminate value;
+                            # -: Fail value
+                            # Allow one missing GDCS to still be considered a pass
+                            if count >= len(sample[analysistype].faidict) - 1:
+                                quality = '+'
+                            else:
+                                quality = '-'
+                            # Add the count, mean depth with standard deviation, the pass/fail determination,
+                            #  and the total number of GDCS genes as well as the results
+                            data += '{hits}/{total},{fail},{gdcs}\n'\
+                                .format(hits=str(count),
+                                        total=len(sample[analysistype].faidict),
+                                        fail=quality,
+                                        gdcs=specific)
+                        # Any samples with a best assembly of 'NA' are considered incomplete.
+                        else:
+                            data += '{},{},,,-\n'.format(sample.name, sample.general.closestrefseqgenus)
+                    elif sample.general.closestrefseqgenus == 'NA':
+                        data += '{}\n'.format(sample.name)
+            # Write the header and data to file
+            report.write(header)
+            report.write(data)
+        # Return the updated metadata object
+        return metadata
+
+    def sero_reporter(self, metadata, analysistype, reportpath):
+        """
+        Creates a report of the results
+        """
+        logging.info('Creating {} report'.format(analysistype))
+        metadata = self.serotype_escherichia(metadata=metadata,
+                                             analysistype=analysistype)
+        # Create the path in which the reports are stored
+        make_path(reportpath)
+        header = 'Strain,Serotype\n'
+        data = ''
+        with open(os.path.join(reportpath, '{}.csv'.format(analysistype)), 'w') as report:
+            for sample in metadata:
+                if sample.general.bestassemblyfile != 'NA':
+                    data += sample.name + ','
+                    if sample[analysistype].blastresults:
+                        # Set the O-type as either the appropriate attribute, or O-untypable
+                        if ';'.join(sample.serosippr.o_set) == '-':
+                            otype = 'O-untypeable'
+                        else:
+                            otype = '{oset} ({opid})'.format(oset=';'.join(sample.serosippr.o_set),
+                                                             opid=sample.serosippr.best_o_pid)
+                        # Same as above, but for the H-type
+                        if ';'.join(sample.serosippr.h_set) == '-':
+                            htype = 'H-untypeable'
+
+                        else:
+                            htype = '{hset} ({hpid})'.format(hset=';'.join(sample.serosippr.h_set),
+                                                             hpid=sample.serosippr.best_h_pid)
+                        serotype = '{otype}:{htype}'.format(otype=otype,
+                                                            htype=htype)
+                        # Populate the data string
+                        data += serotype if serotype != 'O-untypeable:H-untypeable' else 'ND'
+                        data += '\n'
+                    else:
+                        data += '\n'
+            report.write(header)
+            report.write(data)
+        return metadata
+
+    @staticmethod
+    def serotype_escherichia(metadata, analysistype):
+        """
+        Create attributes storing the best results for the O and H types
+        """
+        for sample in metadata:
+            # Initialise negative results to be overwritten when necessary
+            sample[analysistype].best_o_pid = '-'
+            sample[analysistype].o_genes = ['-']
+            sample[analysistype].o_set = ['-']
+            sample[analysistype].best_h_pid = '-'
+            sample[analysistype].h_genes = ['-']
+            sample[analysistype].h_set = ['-']
+            if sample.general.bestassemblyfile != 'NA':
+                if sample.general.closestrefseqgenus == 'Escherichia':
+                    o = dict()
+                    h = dict()
+                    for result, percentid in sample[analysistype].blastresults.items():
+                        if 'O' in result.split('_')[-1]:
+                            o.update({result: float(percentid)})
+                        if 'H' in result.split('_')[-1]:
+                            h.update({result: float(percentid)})
+                    # O
+                    try:
+                        sorted_o = sorted(o.items(), key=operator.itemgetter(1), reverse=True)
+                        sample[analysistype].best_o_pid = str(sorted_o[0][1])
+
+                        sample[analysistype].o_genes = [gene for gene, pid in o.items()
+                                                        if str(pid) == sample[analysistype].best_o_pid]
+                        sample[analysistype].o_set = \
+                            list(set(gene.split('_')[-1] for gene in sample[analysistype].o_genes))
+                    except (KeyError, IndexError):
+                        pass
+                    # H
+                    try:
+                        sorted_h = sorted(h.items(), key=operator.itemgetter(1), reverse=True)
+                        sample[analysistype].best_h_pid = str(sorted_h[0][1])
+                        sample[analysistype].h_genes = [gene for gene, pid in h.items()
+                                                        if str(pid) == sample[analysistype].best_h_pid]
+                        sample[analysistype].h_set = \
+                            list(set(gene.split('_')[-1] for gene in sample[analysistype].h_genes))
+                    except (KeyError, IndexError):
+                        pass
+        return metadata
+
     def alignprotein(self, sample, analysistype, target, targetfiles, records, program):
         """
         Create alignments of the sample nucleotide and amino acid sequences to the reference sequences
@@ -997,8 +1335,7 @@ class GeneSeekr(object):
             sample[analysistype].protseq[target] = str(sample[analysistype].dnaseq[target].translate())
         else:
             seq = sample[analysistype].targetsequence[target]
-            sample[analysistype].protseq[target] = Seq(seq,
-                                                       IUPAC.protein)
+            sample[analysistype].protseq[target] = Seq(seq, IUPAC.protein)
         for targetfile in targetfiles:
             if program == 'blastn' or program == 'tblastn' or program == 'tblastx':
                 # Trim the reference sequence to multiples of three
