@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from accessoryFunctions.accessoryFunctions import combinetargets, GenObject, make_path, MetadataObject
-from Bio import SeqIO
+from Bio.Sequencing.Applications import SamtoolsFaidxCommandline
+from io import StringIO
 from glob import glob
 import logging
 import os
@@ -64,13 +65,17 @@ class Parser(object):
 
     def genus_targets(self, metadata):
         """
-
-
+        Find all target files (files with .tfa extensions), and create a combined targets file if it already doesn't
+        exist
         """
-        metadata[self.analysistype].targetpath = os.path.join(self.targetpath, metadata.general.referencegenus)
+        if self.analysistype != 'GDCS':
+            metadata[self.analysistype].targetpath = os.path.join(self.targetpath, metadata.general.referencegenus)
+        else:
+            metadata[self.analysistype].targetpath = os.path.join(self.targetpath,
+                                                                  'GDCS',
+                                                                  metadata.general.referencegenus)
         metadata[self.analysistype].targets = \
             sorted(glob(os.path.join(metadata[self.analysistype].targetpath, '*.tfa')))
-        metadata[self.analysistype].combinedtargets = self.combinedtargets
         try:
             metadata[self.analysistype].combinedtargets = \
                 glob(os.path.join(metadata[self.analysistype].targetpath, '*.fasta'))[0]
@@ -81,12 +86,19 @@ class Parser(object):
                     glob(os.path.join(metadata[self.analysistype].targetpath, '*.fasta'))[0]
             except IndexError:
                 metadata[self.analysistype].combinedtargets = 'NA'
-        metadata[self.analysistype].targetnames = metadata[self.analysistype].combinedtargets
+        metadata[self.analysistype].targetnames = [os.path.splitext(os.path.basename(fasta))[0] for fasta in
+                                                   metadata[self.analysistype].targets]
 
     def metadata_populate(self):
         """
         Populate the :analysistype GenObject
         """
+        logging.info('Extracting sequence names from combined target file')
+        # Extract all the sequence names from the combined targets file
+        if not self.genus_specific:
+            sequence_names = sequencenames(self.combinedtargets)
+        else:
+            sequence_names = list()
         for metadata in self.metadata:
             # Create and populate the :analysistype attribute
             setattr(metadata, self.analysistype, GenObject())
@@ -94,7 +106,7 @@ class Parser(object):
                 metadata[self.analysistype].targets = self.targets
                 metadata[self.analysistype].combinedtargets = self.combinedtargets
                 metadata[self.analysistype].targetpath = self.targetpath
-                metadata[self.analysistype].targetnames = sequencenames(self.combinedtargets)
+                metadata[self.analysistype].targetnames = sequence_names
             else:
                 self.genus_targets(metadata)
             try:
@@ -103,13 +115,19 @@ class Parser(object):
             except (AttributeError, KeyError):
                 metadata[self.analysistype].reportdir = self.reportpath
 
-    def __init__(self, args):
+    def __init__(self, args, pipeline=False):
         self.analysistype = args.analysistype
         self.sequencepath = os.path.join(args.sequencepath)
         self.targetpath = os.path.join(args.targetpath)
-        if 'full' in self.targetpath or 'assembled' in self.targetpath:
-            self.targetpath = self.targetpath.rstrip('_assembled')
-            self.targetpath = self.targetpath.rstrip('_full')
+        self.pipeline = pipeline
+        if self.pipeline:
+            if 'assembled' in self.targetpath or 'mlst' in self.targetpath.lower():
+                self.targetpath = self.targetpath.rstrip('_assembled')
+                # self.targetpath = self.targetpath.rstrip('_full')
+                if 'rmlst' in self.targetpath:
+                    self.targetpath = os.path.join(os.path.dirname(self.targetpath), 'rMLST')
+                elif 'mlst' in self.targetpath:
+                    self.targetpath = os.path.join(os.path.dirname(self.targetpath), 'MLST')
         assert os.path.isdir(self.targetpath), 'Cannot locate target path as specified: {}' \
             .format(self.targetpath)
         self.reportpath = os.path.join(args.reportpath)
@@ -134,8 +152,19 @@ def sequencenames(contigsfile):
     :return: list of all sequence names
     """
     sequences = list()
-    for record in SeqIO.parse(open(contigsfile, 'r', encoding='iso-8859-15'), 'fasta'):
-        sequences.append(record.id)
+    fai_file = contigsfile + '.fai'
+    if not os.path.isfile(fai_file):
+        logging.info('Creating .fai file for {contigs}'.format(contigs=contigsfile))
+        samindex = SamtoolsFaidxCommandline(reference=contigsfile)
+        # Run the sam index command
+        stdoutindex, stderrindex = map(StringIO, samindex(cwd=os.path.dirname(contigsfile)))
+        logging.debug(stdoutindex.getvalue())
+        logging.debug(stderrindex.getvalue())
+    # Read in the sequence names
+    with open(fai_file, 'r') as seq_file:
+        for line in seq_file:
+            allele = line.split('\t')[0]
+            sequences.append(allele)
     return sequences
 
 
@@ -143,21 +172,28 @@ def objector(kw_dict, start):
     metadata = MetadataObject()
     for key, value in kw_dict.items():
         setattr(metadata, key, value)
+    # Ensure that only a single analysis is specified
+    analysis_count = 0
     # Set the analysis type based on the arguments provided
     if metadata.resfinder is True:
         metadata.analysistype = 'resfinder'
+        analysis_count += 1
     elif metadata.virulencefinder is True:
         metadata.analysistype = 'virulence'
-    # Warn that only one type of analysis can be perfomed at a time
-    elif metadata.resfinder is True and metadata.virulencefinder is True:
-        logging.warning('Cannot perform ResFinder and VirulenceFinder simultaneously. Please choose only one '
-                        'of the -R and -v flags')
+        analysis_count += 1
+    elif metadata.mlst is True:
+        metadata.analysistype = 'mlst'
+        analysis_count += 1
+    # Warn that only one type of analysis can be performed at a time
+    elif analysis_count > 1:
+        logging.warning('Cannot perform MLST, ResFinder and VirulenceFinder simultaneously. Please choose only one '
+                        'of the -M -R and -V flags')
     # Default to GeneSeekr
     else:
         metadata.analysistype = 'geneseekr'
     # Add the start time variable to the object
     metadata.start = start
-    return metadata
+    return metadata, False
 
 
 # noinspection PyProtectedMember
