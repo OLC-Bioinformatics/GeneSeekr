@@ -143,8 +143,7 @@ class GeneSeekr(object):
                                                     evalue=evalue,
                                                     num_alignments=num_alignments,
                                                     num_threads=num_threads,
-                                                    outfmt=outfmt,
-                                                    perc_identity=perc_identity)
+                                                    outfmt=outfmt)
                 elif program == 'blastx':
                     blast = self.blastx_commandline(sample=sample,
                                                     analysistype=analysistype,
@@ -152,8 +151,7 @@ class GeneSeekr(object):
                                                     evalue=evalue,
                                                     num_alignments=num_alignments,
                                                     num_threads=num_threads,
-                                                    outfmt=outfmt,
-                                                    perc_identity=perc_identity)
+                                                    outfmt=outfmt)
                 elif program == 'tblastn':
                     blast = self.tblastn_commandline(sample=sample,
                                                      analysistype=analysistype,
@@ -161,8 +159,7 @@ class GeneSeekr(object):
                                                      evalue=evalue,
                                                      num_alignments=num_alignments,
                                                      num_threads=num_threads,
-                                                     outfmt=outfmt,
-                                                     perc_identity=perc_identity)
+                                                     outfmt=outfmt)
                 elif program == 'tblastx':
                     blast = self.tblastx_commandline(sample=sample,
                                                      analysistype=analysistype,
@@ -170,8 +167,7 @@ class GeneSeekr(object):
                                                      evalue=evalue,
                                                      num_alignments=num_alignments,
                                                      num_threads=num_threads,
-                                                     outfmt=outfmt,
-                                                     perc_identity=perc_identity)
+                                                     outfmt=outfmt)
                 else:
                     blast = str()
                 assert blast, 'Something went wrong, the BLAST program you provided ({program}) isn\'t supported'\
@@ -208,31 +204,29 @@ class GeneSeekr(object):
         return blastn
 
     @staticmethod
-    def blastx_commandline(sample, analysistype, db, evalue, num_alignments, num_threads, outfmt, perc_identity):
+    def blastx_commandline(sample, analysistype, db, evalue, num_alignments, num_threads, outfmt):
         blastx = NcbiblastxCommandline(query=sample.general.bestassemblyfile,
                                        db=db,
                                        evalue=evalue,
                                        num_alignments=num_alignments,
                                        num_threads=num_threads,
                                        outfmt=outfmt,
-                                       perc_identity=perc_identity,
                                        out=sample[analysistype].report)
         return blastx
 
     @staticmethod
-    def blastp_commandline(sample, analysistype, db, evalue, num_alignments, num_threads, outfmt, perc_identity):
+    def blastp_commandline(sample, analysistype, db, evalue, num_alignments, num_threads, outfmt):
         blastp = NcbiblastpCommandline(query=sample.general.bestassemblyfile,
                                        db=db,
                                        evalue=evalue,
                                        num_alignments=num_alignments,
                                        num_threads=num_threads,
                                        outfmt=outfmt,
-                                       perc_identity=perc_identity,
                                        out=sample[analysistype].report)
         return blastp
 
     @staticmethod
-    def tblastn_commandline(sample, analysistype, db, evalue, num_alignments, num_threads, outfmt, perc_identity):
+    def tblastn_commandline(sample, analysistype, db, evalue, num_alignments, num_threads, outfmt):
         # BLAST command line call. Note the high number of default alignments.
         # Due to the fact that all the targets are combined into one database, this is to ensure that all potential
         # alignments are reported. Also note the custom outfmt: the doubled quotes are necessary to get it work
@@ -242,12 +236,11 @@ class GeneSeekr(object):
                                          num_alignments=num_alignments,
                                          num_threads=num_threads,
                                          outfmt=outfmt,
-                                         perc_identity=perc_identity,
                                          out=sample[analysistype].report)
         return tblastn
 
     @staticmethod
-    def tblastx_commandline(sample, analysistype, db, evalue, num_alignments, num_threads, outfmt, perc_identity):
+    def tblastx_commandline(sample, analysistype, db, evalue, num_alignments, num_threads, outfmt):
         # BLAST command line call. Note the high number of default alignments.
         # Due to the fact that all the targets are combined into one database, this is to ensure that all potential
         # alignments are reported. Also note the custom outfmt: the doubled quotes are necessary to get it work
@@ -257,7 +250,6 @@ class GeneSeekr(object):
                                          num_alignments=num_alignments,
                                          num_threads=num_threads,
                                          outfmt=outfmt,
-                                         perc_identity=perc_identity,
                                          out=sample[analysistype].report)
         return tblastx
 
