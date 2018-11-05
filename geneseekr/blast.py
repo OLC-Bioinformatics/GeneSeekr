@@ -44,9 +44,9 @@ class BLAST(object):
                                                      self.analysistype,
                                                      self.program,
                                                      self.outfmt,
-                                                     evalue='1E-20',
+                                                     evalue='1E-10',
                                                      num_threads=self.cpus,
-                                                     perc_identity=99)
+                                                     perc_identity=self.cutoff)
         elif 'sixteens' in self.analysistype:
             self.metadata = self.geneseekr.run_blast(self.metadata,
                                                      self.analysistype,
@@ -54,7 +54,7 @@ class BLAST(object):
                                                      self.outfmt,
                                                      evalue='1E-100',
                                                      num_threads=self.cpus,
-                                                     num_alignments=1000,
+                                                     num_alignments=5000,
                                                      perc_identity=98)
         elif self.analysistype == 'GDCS':
             self.metadata = self.geneseekr.run_blast(self.metadata,
@@ -262,14 +262,16 @@ class BLAST(object):
         self.pipeline = pipeline
         try:
             self.metadata = args.runmetadata.samples
-            parse = Parser(self)
+            parse = Parser(args=self,
+                           pipeline=self.pipeline)
             if not self.genus_specific:
                 parse.target_find()
             parse.metadata_populate()
         except (AttributeError, KeyError):
             # Run the Parser class from the GeneSeekr methods script to create lists of the database targets, and
             # combined targets, fasta sequences, and metadata objects.
-            parse = Parser(self)
+            parse = Parser(args=self,
+                           pipeline=self.pipeline)
             parse.main()
         # Extract the variables from the object
         self.reportpath = parse.reportpath
@@ -301,8 +303,11 @@ class MLST(MLSTSippr):
         analysistype = 'rmlst' if 'rmlst' in self.analysistype.lower() else 'mlst'
         # Populate self.plusdict in order to reuse parsing code from an assembly-based method
         for sample in self.runmetadata.samples:
+            self.plusdict[sample.name] = dict()
+            self.matchdict[sample.name] = dict()
             if sample.general.bestassemblyfile != 'NA':
                 for gene in sample[analysistype].allelenames:
+                    self.plusdict[sample.name][gene] = dict()
                     for allele, percentidentity in sample[analysistype].blastresults.items():
                         if gene in allele:
                             # Split the allele number from the gene name using the appropriate delimiter
@@ -312,12 +317,16 @@ class MLST(MLSTSippr):
                                 splitter = '-'
                             else:
                                 splitter = ''
-                            # Create the plusdict dictionary as in the assembly-based (r)MLST method. Allows all the
-                            # parsing and sequence typing code to be reused.
+                            self.matchdict[sample.name].update({gene: allele.split(splitter)[-1]})
                             try:
-                                self.plusdict[sample.name][gene][allele.split(splitter)[-1]][percentidentity] = 10
-                            except IndexError:
-                                pass
+                                self.plusdict[sample.name][gene][allele.split(splitter)[-1]][percentidentity] \
+                                    = 10
+                            except KeyError:
+                                self.plusdict[sample.name][gene][allele.split(splitter)[-1]] = dict()
+                                self.plusdict[sample.name][gene][allele.split(splitter)[-1]][percentidentity] \
+                                    = 10
+                    if gene not in self.matchdict[sample.name]:
+                        self.matchdict[sample.name].update({gene: 'N'})
         self.profiler()
         self.sequencetyper()
         self.mlstreporter()
