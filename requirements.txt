@@ -19,7 +19,7 @@ cycler==0.10.0
 decorator==4.3.0
 filelock==3.0.4
 future==0.16.0
-geneseekr==0.2.1
+geneseekr==0.2.2
 glob2==0.6
 idna==2.7
 interop==1.1.4
@@ -40,7 +40,7 @@ more-itertools==4.2.0
 msgpack-python==0.5.6
 nbformat==4.4.0
 numpy==1.15.0
-OLCTools==0.5.9
+OLCTools==0.6.0
 olefile==0.45.1
 pandas==0.23.4
 Pillow==5.1.0
