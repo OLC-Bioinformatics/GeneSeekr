@@ -46,12 +46,15 @@ click_options = [
 click_nt_options = [
     click.option('-R', '--resfinder',
                  is_flag=True,
+                 default=False,
                  help='Perform ResFinder-like analyses'),
     click.option('-V', '--virulencefinder',
                  is_flag=True,
+                 default=False,
                  help='Perform VirulenceFinder-like analyses'),
     click.option('-M', '--MLST',
                  is_flag=True,
+                 default=False,
                  help='Perform allele typing (e.g. rMLST, cgMLST, wgMLST, MLST, etc.')
 ]
 
