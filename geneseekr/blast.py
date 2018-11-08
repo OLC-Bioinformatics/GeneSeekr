@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from accessoryFunctions.accessoryFunctions import MetadataObject
 from MLSTsippr.mlst import GeneSippr as MLSTSippr
+from sipprverse_reporter.reports import Reports
 from geneseekr.geneseekr import GeneSeekr
 from geneseekr.parser import Parser
 import multiprocessing
@@ -52,10 +53,10 @@ class BLAST(object):
                                                      self.analysistype,
                                                      self.program,
                                                      self.outfmt,
-                                                     evalue='1E-100',
+                                                     evalue='1E-20',
                                                      num_threads=self.cpus,
                                                      num_alignments=5000,
-                                                     perc_identity=98)
+                                                     perc_identity=99)
         elif self.analysistype == 'GDCS':
             self.metadata = self.geneseekr.run_blast(self.metadata,
                                                      self.analysistype,
@@ -113,6 +114,9 @@ class BLAST(object):
         logging.info('Creating {at} reports'.format(at=self.analysistype))
         if 'resfinder' in self.analysistype:
             # ResFinder-specific report
+            self.targetfolders, self.targetfiles, self.records = \
+                self.geneseekr.target_folders(metadata=self.metadata,
+                                              analysistype=self.analysistype)
             self.metadata = self.geneseekr.resfinder_reporter(metadata=self.metadata,
                                                               analysistype=self.analysistype,
                                                               reportpath=self.reportpath,
@@ -174,15 +178,25 @@ class BLAST(object):
             self.metadata = self.geneseekr.sero_reporter(metadata=self.metadata,
                                                          analysistype=self.analysistype,
                                                          reportpath=self.reportpath)
+        elif self.analysistype == 'genesippr':
+            sippr_report = GenesipprReport(start=self.start,
+                                           metadata=self.metadata,
+                                           sequencepath=self.sequencepath,
+                                           reportpath=self.reportpath,
+                                           analysistype=self.analysistype)
+            sippr_report.main()
         else:
             # GeneSeekr-specific report
-            self.metadata = self.geneseekr.reporter(self.metadata,
-                                                    self.analysistype,
-                                                    self.reportpath,
-                                                    self.align,
-                                                    self.targetfiles,
-                                                    self.records,
-                                                    self.program)
+            self.targetfolders, self.targetfiles, self.records = \
+                self.geneseekr.target_folders(metadata=self.metadata,
+                                              analysistype=self.analysistype)
+            self.metadata = self.geneseekr.reporter(metadata=self.metadata,
+                                                    analysistype=self.analysistype,
+                                                    reportpath=self.reportpath,
+                                                    align=self.align,
+                                                    targetfiles=self.targetfiles,
+                                                    records=self.records,
+                                                    program=self.program)
 
     # noinspection PyNoneFunctionAssignment
     def clean_object(self):
@@ -330,3 +344,28 @@ class MLST(MLSTSippr):
         self.profiler()
         self.sequencetyper()
         self.mlstreporter()
+
+
+class GenesipprReport(object):
+
+    def main(self):
+        # Update the genesippr GenObject to include attributes necessary for the Genesippr reporter module
+        for sample in self.runmetadata.samples:
+            sample[self.analysistype].avgdepth = dict()
+            sample[self.analysistype].standarddev = dict()
+            if sample[self.analysistype].blastresults != 'NA':
+                sample[self.analysistype].results = sample[self.analysistype].blastresults
+            else:
+                sample[self.analysistype].results = dict()
+        report = Reports(inputobject=self)
+        report.reporter()
+
+    def __init__(self, start, metadata, sequencepath, reportpath, analysistype='genesippr'):
+        self.starttime = start
+        self.metadata = metadata
+        self.path = sequencepath
+        self.reportpath = reportpath
+        self.logfile = os.path.join(self.path, 'log')
+        self.runmetadata = MetadataObject()
+        self.runmetadata.samples = self.metadata
+        self.analysistype = analysistype
