@@ -648,7 +648,6 @@ class GeneSeekr(object):
                     else:
                         outfile.write(',0')
                 outfile.write('\n')
-
         # Create a workbook to store the report. Using xlsxwriter rather than a simple csv format, as I want to be
         # able to have appropriately sized, multi-line cells
         workbook = xlsxwriter.Workbook(os.path.join(reportpath, '{at}_{program}.xlsx'
@@ -675,7 +674,6 @@ class GeneSeekr(object):
             if sample[analysistype].targetnames != 'NA':
                 if sample[analysistype].blastresults != 'NA':
                     for target in sorted(sample[analysistype].targetnames):
-
                         try:
                             # Only if the alignment option is selected, for inexact results, add alignments
                             if align and sample[analysistype].blastresults[target] != 100.00:
@@ -693,13 +691,15 @@ class GeneSeekr(object):
                         if target in align_set:
                             if program == 'blastn':
                                 # Add the appropriate headers
-                                headers.extend(['{target}_aa_Alignment'.format(target=target),
+                                headers.extend(['{target}_FASTA'.format(target=target),
+                                                '{target}_aa_Alignment'.format(target=target),
                                                 '{target}_aa_SNP_location'.format(target=target),
                                                 '{target}_nt_Alignment'.format(target=target),
                                                 '{target}_nt_SNP_location'.format(target=target)
                                                 ])
                             else:
-                                headers.extend(['{target}_aa_Alignment'.format(target=target),
+                                headers.extend(['{target}_FASTA'.format(target=target),
+                                                '{target}_aa_Alignment'.format(target=target),
                                                 '{target}_aa_SNP_location'.format(target=target),
                                                 ])
                     # Only need to iterate through this once
@@ -742,42 +742,46 @@ class GeneSeekr(object):
                                 # Add the alignment, and the location of mismatches for both nucleotide and amino
                                 # acid sequences
                                 if program == 'blastn':
-                                    data.extend([record.format('fasta'),
+                                    data.extend([str(sample[analysistype].blastresults[target]),
+                                                 record.format('fasta'),
                                                  sample[analysistype].aaalign[target],
                                                  sample[analysistype].aaindex[target],
                                                  sample[analysistype].ntalign[target],
                                                  sample[analysistype].ntindex[target]
                                                  ])
                                 else:
-                                    data.extend([record.format('fasta'),
+                                    data.extend([str(sample[analysistype].blastresults[target]),
+                                                 record.format('fasta'),
                                                  sample[analysistype].aaalign[target],
                                                  sample[analysistype].aaindex[target],
                                                  ])
                             elif align and sample[analysistype].blastresults[target] == 100.00:
                                 if target in align_set:
                                     if program == 'blastn':
-                                        data.extend(['+', '-', '-', '-', '-'])
+                                        data.extend([str(sample[analysistype].blastresults[target]), '-', '-', '-', '-', '-'])
                                     else:
-                                        data.extend(['+', '-', '-'])
+                                        data.extend([str(sample[analysistype].blastresults[target]), '-', '-', '-'])
                                 else:
                                     data.append('-')
-                            elif not align and sample[analysistype].blastresults[target] == 100.00:
-                                data.append('+')
+                            # elif not align and sample[analysistype].blastresults[target] == 100.00:
+                            #     data.append('+')
+                            elif not align and sample[analysistype].blastresults[target] > 95.00:
+                                data.append(str(sample[analysistype].blastresults[target]))
                             else:
                                 if target in align_set:
                                     if program == 'blastn':
-                                        data.extend(['-', '-', '-', '-', '-'])
+                                        data.extend(['-', '-', '-', '-', '-', '-'])
                                     else:
-                                        data.extend(['-', '-', '-'])
+                                        data.extend(['-', '-', '-', '-'])
                                 else:
                                     data.append('-')
                         # If there are no blast results for the target, add a '-'
                         except (KeyError, TypeError):
                             if target in align_set:
                                 if program == 'blastn':
-                                    data.extend(['-', '-', '-', '-', '-'])
+                                    data.extend(['-', '-', '-', '-', '-', '-'])
                                 else:
-                                    data.extend(['-', '-', '-'])
+                                    data.extend(['-', '-', '-', '-'])
                             else:
                                 data.append('-')
                 # If there are no blast results at all, add a '-'
