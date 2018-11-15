@@ -284,7 +284,9 @@ class GeneSeekr(object):
                     # Percent identity is the (length of the alignment - number of mismatches) / total subject length
                     percentidentity = float('{:0.2f}'.format((float(row['positives']) - float(row['gaps'])) /
                                                              subject_length * 100))
-                    target = row['subject_id']
+                    # Remove unwanted pipes added to the name
+                    target = row['subject_id'].lstrip('gb|').rstrip('|') if '|' in row['subject_id'] else \
+                        row['subject_id']
                     # If the percent identity is greater than the cutoff
                     if percentidentity >= cutoff:
                         # Update the dictionary with the target and percent identity
@@ -373,14 +375,14 @@ class GeneSeekr(object):
                         # Extract the top result, and set it as the genus of the sample
                         sample[analysistype].genus = sample[analysistype].sortedgenera[0][0]
                         # Previous code relies on having the closest refseq genus, so set this as above
-                        sample.general.closestrefseqgenus = sample[analysistype].genus
-                        sample.general.referencegenus = sample[analysistype].genus
+                        # sample.general.closestrefseqgenus = sample[analysistype].genus
+                        # sample.general.referencegenus = sample[analysistype].genus
                     except IndexError:
                         # Populate attributes with 'NA'
                         sample[analysistype].sortedgenera = 'NA'
                         sample[analysistype].genus = 'NA'
-                        sample.general.closestrefseqgenus = 'NA'
-                        sample.general.referencegenus = 'NA'
+                        # sample.general.closestrefseqgenus = 'NA'
+                        # sample.general.referencegenus = 'NA'
                     # If the percent identity is greater than the cutoff
                     if percentidentity >= cutoff:
                         # Update the dictionary with the target and percent identity
@@ -440,7 +442,8 @@ class GeneSeekr(object):
                     # Calculate the percent identity
                     # Percent identity is the (length of the alignment - number of mismatches) / total subject length
                     percentidentity = float('{:0.2f}'.format((float(row['positives'])) / subject_length * 100))
-                    target = row['subject_id']
+                    target = row['subject_id'].lstrip('gb|').rstrip('|') if '|' in row['subject_id'] else \
+                        row['subject_id']
                     contig = row['query_id']
                     high = max([int(row['query_start']), int(row['query_end'])])
                     low = min([int(row['query_start']), int(row['query_end'])])
@@ -758,14 +761,15 @@ class GeneSeekr(object):
                             elif align and sample[analysistype].blastresults[target] == 100.00:
                                 if target in align_set:
                                     if program == 'blastn':
-                                        data.extend([str(sample[analysistype].blastresults[target]), '-', '-', '-', '-', '-'])
+                                        data.extend([str(sample[analysistype].blastresults[target]), '-', '-', '-',
+                                                     '-', '-'])
                                     else:
                                         data.extend([str(sample[analysistype].blastresults[target]), '-', '-', '-'])
                                 else:
-                                    data.append('-')
+                                    data.append(str(sample[analysistype].blastresults[target]))
                             # elif not align and sample[analysistype].blastresults[target] == 100.00:
-                            #     data.append('+')
-                            elif not align and sample[analysistype].blastresults[target] > 95.00:
+                            #     data.append(str(sample[analysistype].blastresults[target]))
+                            elif not align and float(sample[analysistype].blastresults[target]) > 95.00:
                                 data.append(str(sample[analysistype].blastresults[target]))
                             else:
                                 if target in align_set:
@@ -910,7 +914,6 @@ class GeneSeekr(object):
                     try:
                         # Only if the alignment option is selected, for inexact results, add alignments
                         if align and percentid != 100.00:
-
                             # Align the protein (and nucleotide) sequences to the reference
                             sample = self.alignprotein(sample, analysistype, name, targetfiles, records, program)
                             if not extended:
