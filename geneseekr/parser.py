@@ -117,8 +117,8 @@ class Parser(object):
 
     def __init__(self, args, pipeline=False):
         self.analysistype = args.analysistype
-        self.sequencepath = os.path.join(args.sequencepath)
-        self.targetpath = os.path.join(args.targetpath)
+        self.sequencepath = os.path.abspath(os.path.join(args.sequencepath))
+        self.targetpath = os.path.abspath(os.path.join(args.targetpath))
         self.pipeline = pipeline
         if self.pipeline:
             if 'assembled' in self.targetpath or 'mlst' in self.targetpath.lower():
@@ -130,7 +130,7 @@ class Parser(object):
                     self.targetpath = os.path.join(os.path.dirname(self.targetpath), 'MLST')
         assert os.path.isdir(self.targetpath), 'Cannot locate target path as specified: {}' \
             .format(self.targetpath)
-        self.reportpath = os.path.join(args.reportpath)
+        self.reportpath = os.path.abspath(os.path.join(args.reportpath))
         make_path(self.reportpath)
         assert os.path.isdir(self.reportpath), 'Cannot locate report path as specified: {}' \
             .format(self.reportpath)
