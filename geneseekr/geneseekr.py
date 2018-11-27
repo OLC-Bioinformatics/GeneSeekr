@@ -6,6 +6,7 @@ from biotools.bbtools import kwargs_to_string
 from Bio.Blast.Applications import NcbiblastnCommandline, NcbiblastxCommandline, NcbiblastpCommandline, \
     NcbitblastnCommandline, NcbitblastxCommandline
 from Bio.Application import ApplicationError
+from Bio.Data.CodonTable import TranslationError
 from Bio.pairwise2 import format_alignment
 from Bio.SeqRecord import SeqRecord
 from Bio.Alphabet import IUPAC
@@ -1343,7 +1344,13 @@ class GeneSeekr(object):
                     else str(records[targetfile][target].seq)[:refremainder]
                 # Translate the nucleotide sequence of the reference sequence
                 refdna = Seq(refseq, IUPAC.unambiguous_dna)
-                refprot = str(refdna.translate())
+                try:
+                    refprot = str(refdna.translate())
+                # The ResFinder database seems to have at least one ambiguous DNA sequence, translate it appropriately
+                except TranslationError:
+                    # Translate the nucleotide sequence of the reference sequence
+                    refdna = Seq(refseq, IUPAC.ambiguous_dna)
+                    refprot = str(refdna.translate())
                 # Use pairwise2 to perform a local alignment with the following parameters:
                 # x     No match parameters. Identical characters have score of 1, otherwise 0.
                 # s     Same open (-1)  and extend (-.1) gap penalties for both sequences
