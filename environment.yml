@@ -106,7 +106,7 @@ dependencies:
   - pip:
     - confindr==0.4.1
     - cycler==0.10.0
-    - geneseekr==0.2.9
+    - geneseekr==0.3.0
     - interop==1.1.4
     - kiwisolver==1.0.1
     - matplotlib==3.0.0

@@ -19,7 +19,7 @@ cycler==0.10.0
 decorator==4.3.0
 filelock==3.0.4
 future==0.16.0
-geneseekr==0.2.9
+geneseekr==0.3.0
 glob2==0.6
 idna==2.7
 interop==1.1.4

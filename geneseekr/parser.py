@@ -192,7 +192,7 @@ def objector(kw_dict, start):
         metadata.analysistype = 'rmlst'
         analysis_count += 1
         analyses.append(metadata.analysistype)
-    elif metadata.sixteen is True:
+    elif metadata.sixteens is True:
         metadata.analysistype = 'sixteens_full'
         analysis_count += 1
         analyses.append(metadata.analysistype)
