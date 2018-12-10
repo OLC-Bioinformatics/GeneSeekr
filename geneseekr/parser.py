@@ -174,20 +174,40 @@ def objector(kw_dict, start):
         setattr(metadata, key, value)
     # Ensure that only a single analysis is specified
     analysis_count = 0
+    analyses = list()
     # Set the analysis type based on the arguments provided
     if metadata.resfinder is True:
         metadata.analysistype = 'resfinder'
         analysis_count += 1
-    elif metadata.virulencefinder is True:
+        analyses.append(metadata.analysistype)
+    elif metadata.virulence is True:
         metadata.analysistype = 'virulence'
         analysis_count += 1
+        analyses.append(metadata.analysistype)
     elif metadata.mlst is True:
         metadata.analysistype = 'mlst'
         analysis_count += 1
+        analyses.append(metadata.analysistype)
+    elif metadata.rmlst is True:
+        metadata.analysistype = 'rmlst'
+        analysis_count += 1
+        analyses.append(metadata.analysistype)
+    elif metadata.sixteen is True:
+        metadata.analysistype = 'sixteens_full'
+        analysis_count += 1
+        analyses.append(metadata.analysistype)
+    elif metadata.gdcs is True:
+        metadata.analysistype = 'GDCS'
+        analysis_count += 1
+        analyses.append(metadata.analysistype)
+    elif metadata.genesippr is True:
+        metadata.analysistype = 'genesippr'
+        analysis_count += 1
+        analyses.append(metadata.analysistype)
     # Warn that only one type of analysis can be performed at a time
     elif analysis_count > 1:
-        logging.warning('Cannot perform MLST, ResFinder and VirulenceFinder simultaneously. Please choose only one '
-                        'of the -M -R and -V flags')
+        logging.warning('Cannot perform multiple analyses concurrently. You selected {at}. Please choose only one.'
+                        .format(at=','.join(analyses)))
     # Default to GeneSeekr
     else:
         metadata.analysistype = 'geneseekr'
