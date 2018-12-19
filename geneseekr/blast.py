@@ -353,6 +353,7 @@ class GenesipprReport(object):
         for sample in self.runmetadata.samples:
             sample[self.analysistype].avgdepth = dict()
             sample[self.analysistype].standarddev = dict()
+            sample.general.trimmedcorrectedfastqfiles = [sample.general.bestassemblyfile]
             if sample[self.analysistype].blastresults != 'NA':
                 sample[self.analysistype].results = sample[self.analysistype].blastresults
             else:
