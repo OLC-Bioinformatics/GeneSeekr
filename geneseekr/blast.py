@@ -20,6 +20,7 @@ class BLAST(object):
         """
         self.blast_db()
         self.run_blast()
+        self.add_blast_headers()
         self.parse_results()
         self.create_reports()
         self.clean_object()
@@ -41,37 +42,46 @@ class BLAST(object):
         logging.info('Performing {program} analyses on {at} targets'.format(program=self.program,
                                                                             at=self.analysistype))
         if 'mlst' in self.analysistype.lower():
-            self.metadata = self.geneseekr.run_blast(self.metadata,
-                                                     self.analysistype,
-                                                     self.program,
-                                                     self.outfmt,
+            self.metadata = self.geneseekr.run_blast(metadata=self.metadata,
+                                                     analysistype=self.analysistype,
+                                                     program=self.program,
+                                                     outfmt=self.outfmt,
                                                      evalue='1E-10',
                                                      num_threads=self.cpus,
                                                      perc_identity=self.cutoff)
         elif 'sixteens' in self.analysistype:
-            self.metadata = self.geneseekr.run_blast(self.metadata,
-                                                     self.analysistype,
-                                                     self.program,
-                                                     self.outfmt,
+            self.metadata = self.geneseekr.run_blast(metadata=self.metadata,
+                                                     analysistype=self.analysistype,
+                                                     program=self.program,
+                                                     outfmt=self.outfmt,
                                                      evalue='1E-20',
                                                      num_threads=self.cpus,
                                                      num_alignments=5000,
                                                      perc_identity=99)
         elif self.analysistype == 'GDCS':
-            self.metadata = self.geneseekr.run_blast(self.metadata,
-                                                     self.analysistype,
-                                                     self.program,
-                                                     self.outfmt,
+            self.metadata = self.geneseekr.run_blast(metadata=self.metadata,
+                                                     analysistype=self.analysistype,
+                                                     program=self.program,
+                                                     outfmt=self.outfmt,
                                                      evalue=self.evalue,
                                                      num_threads=self.cpus,
                                                      task='blastn')
         else:
-            self.metadata = self.geneseekr.run_blast(self.metadata,
-                                                     self.analysistype,
-                                                     self.program,
-                                                     self.outfmt,
+            self.metadata = self.geneseekr.run_blast(metadata=self.metadata,
+                                                     analysistype=self.analysistype,
+                                                     program=self.program,
+                                                     outfmt=self.outfmt,
                                                      evalue=self.evalue,
                                                      num_threads=self.cpus)
+
+    def add_blast_headers(self):
+        """
+        Add the headers to the .csv files
+        """
+        logging.info('Adding headers to {program} .csv outputs'.format(program=self.program))
+        self.geneseekr.add_headers(metadata=self.metadata,
+                                   analysistype=self.analysistype,
+                                   fieldnames=self.fieldnames)
 
     def parse_results(self):
         """
