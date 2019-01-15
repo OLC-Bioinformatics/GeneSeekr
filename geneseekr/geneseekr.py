@@ -55,7 +55,7 @@ class GeneSeekr(object):
                     output=output,
                     options=options)
         # Check if database already exists
-        if not os.path.isfile('{}.nhr'.format(output)):
+        if not os.path.isfile('{output}.nhr'.format(output=output)):
             if output != 'NA':
                 logging.debug(cmd)
             out, err = run_subprocess(cmd)
@@ -255,6 +255,38 @@ class GeneSeekr(object):
         return tblastx
 
     @staticmethod
+    def add_headers(metadata, analysistype, fieldnames):
+        """
+        Add the BLAST headers used to the .csv report files. Opens the file, and reads in the results. If the
+        header hasn't previously been added, overwrites the file with the header and the extracted results
+        :param metadata: Metadata object
+        :param analysistype: Current analysis type
+        :param fieldnames: List of column names in BLAST report
+        """
+        for sample in metadata:
+            try:
+                # Create a list to store the BLAST results
+                data = list()
+                with open(sample[analysistype].report, 'r') as report:
+                    for line in report:
+                        # Check to see if the header has previously been added
+                        if line.startswith(fieldnames[0]):
+                            # Don't re-add the header
+                            break
+                        # Otherwise, read in the results
+                        else:
+                            data.append(line)
+                # If the header wasn't present in the file, overwrite it
+                if data:
+                    with open(sample[analysistype].report, 'w') as updated_report:
+                        # Add the header
+                        updated_report.write('{headers}\n'.format(headers=','.join(fieldnames)))
+                        # Add the results
+                        updated_report.write(','.join(data))
+            except FileNotFoundError:
+                pass
+
+    @staticmethod
     def parse_blast(metadata, analysistype, fieldnames, cutoff, program):
         """
         Parse the blast results, and store necessary data in dictionaries in metadata object
@@ -274,35 +306,39 @@ class GeneSeekr(object):
                 resultdict = dict()
                 # Go through each BLAST result
                 for row in blastdict:
-                    # Create the subject length variable - if the sequences are DNA (e.g. blastn), use the subject
-                    # length as usual; if the sequences are protein (e.g. tblastx), use the subject length / 3
-                    if program == 'blastn' or program == 'blastp' or program == 'blastx':
-                        subject_length = float(row['subject_length'])
-
+                    # Ignore the headers
+                    if row['query_id'].startswith(fieldnames[0]):
+                        pass
                     else:
-                        subject_length = float(row['subject_length']) / 3
-                    # Calculate the percent identity and extract the bitscore from the row
-                    # Percent identity is the (length of the alignment - number of mismatches) / total subject length
-                    percentidentity = float('{:0.2f}'.format((float(row['positives']) - float(row['gaps'])) /
-                                                             subject_length * 100))
-                    # Remove unwanted pipes added to the name
-                    target = row['subject_id'].lstrip('gb|').rstrip('|') if '|' in row['subject_id'] else \
-                        row['subject_id']
-                    # If the percent identity is greater than the cutoff
-                    if percentidentity >= cutoff:
-                        # Update the dictionary with the target and percent identity
-                        resultdict.update({target: percentidentity})
-                        # Determine if the orientation of the sequence is reversed compared to the reference
-                        if int(row['subject_end']) < int(row['subject_start']):
-                            # Create a sequence object using Biopython
-                            seq = Seq(row['query_sequence'], IUPAC.unambiguous_dna)
-                            # Calculate the reverse complement of the sequence
-                            querysequence = str(seq.reverse_complement())
-                        # If the sequence is not reversed, use the sequence as it is in the output
+                        # Create the subject length variable - if the sequences are DNA (e.g. blastn), use the subject
+                        # length as usual; if the sequences are protein (e.g. tblastx), use the subject length / 3
+                        if program == 'blastn' or program == 'blastp' or program == 'blastx':
+                            subject_length = float(row['subject_length'])
+
                         else:
-                            querysequence = row['query_sequence']
-                        # Add the sequence in the correct orientation to the sample
-                        sample[analysistype].targetsequence[target] = querysequence
+                            subject_length = float(row['subject_length']) / 3
+                        # Calculate the percent identity and extract the bitscore from the row
+                        # Percent identity is the (length of the alignment - num mismatches) / total subject length
+                        percentidentity = float('{:0.2f}'.format((float(row['positives']) - float(row['gaps'])) /
+                                                                 subject_length * 100))
+                        # Remove unwanted pipes added to the name
+                        target = row['subject_id'].lstrip('gb|').rstrip('|') if '|' in row['subject_id'] else \
+                            row['subject_id']
+                        # If the percent identity is greater than the cutoff
+                        if percentidentity >= cutoff:
+                            # Update the dictionary with the target and percent identity
+                            resultdict.update({target: percentidentity})
+                            # Determine if the orientation of the sequence is reversed compared to the reference
+                            if int(row['subject_end']) < int(row['subject_start']):
+                                # Create a sequence object using Biopython
+                                seq = Seq(row['query_sequence'], IUPAC.unambiguous_dna)
+                                # Calculate the reverse complement of the sequence
+                                querysequence = str(seq.reverse_complement())
+                            # If the sequence is not reversed, use the sequence as it is in the output
+                            else:
+                                querysequence = row['query_sequence']
+                            # Add the sequence in the correct orientation to the sample
+                            sample[analysistype].targetsequence[target] = querysequence
                     # Add the percent identity to the object
                     sample[analysistype].blastresults = resultdict
                 # Populate missing results with 'NA' values
