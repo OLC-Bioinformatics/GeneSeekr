@@ -172,71 +172,48 @@ def objector(kw_dict, start):
     metadata = MetadataObject()
     for key, value in kw_dict.items():
         setattr(metadata, key, value)
-    # Ensure that only a single analysis is specified
-    analysis_count = 0
-    analyses = list()
-    # Set the analysis type based on the arguments provided
-    if metadata.resfinder is True:
-        metadata.analysistype = 'resfinder'
-        analysis_count += 1
-        analyses.append(metadata.analysistype)
-    elif metadata.virulence is True:
-        metadata.analysistype = 'virulence'
-        analysis_count += 1
-        analyses.append(metadata.analysistype)
-    elif metadata.mlst is True:
-        metadata.analysistype = 'mlst'
-        analysis_count += 1
-        analyses.append(metadata.analysistype)
-    elif metadata.rmlst is True:
-        metadata.analysistype = 'rmlst'
-        analysis_count += 1
-        analyses.append(metadata.analysistype)
-    elif metadata.sixteens is True:
-        metadata.analysistype = 'sixteens_full'
-        analysis_count += 1
-        analyses.append(metadata.analysistype)
-    elif metadata.gdcs is True:
-        metadata.analysistype = 'GDCS'
-        analysis_count += 1
-        analyses.append(metadata.analysistype)
-    elif metadata.genesippr is True:
-        metadata.analysistype = 'genesippr'
-        analysis_count += 1
-        analyses.append(metadata.analysistype)
-    # Warn that only one type of analysis can be performed at a time
-    elif analysis_count > 1:
-        logging.warning('Cannot perform multiple analyses concurrently. You selected {at}. Please choose only one.'
-                        .format(at=','.join(analyses)))
-    # Default to GeneSeekr
-    else:
+    try:
+        # Ensure that only a single analysis is specified
+        analysis_count = 0
+        analyses = list()
+        # Set the analysis type based on the arguments provided
+        if metadata.resfinder is True:
+            metadata.analysistype = 'resfinder'
+            analysis_count += 1
+            analyses.append(metadata.analysistype)
+        elif metadata.virulence is True:
+            metadata.analysistype = 'virulence'
+            analysis_count += 1
+            analyses.append(metadata.analysistype)
+        elif metadata.mlst is True:
+            metadata.analysistype = 'mlst'
+            analysis_count += 1
+            analyses.append(metadata.analysistype)
+        elif metadata.rmlst is True:
+            metadata.analysistype = 'rmlst'
+            analysis_count += 1
+            analyses.append(metadata.analysistype)
+        elif metadata.sixteens is True:
+            metadata.analysistype = 'sixteens_full'
+            analysis_count += 1
+            analyses.append(metadata.analysistype)
+        elif metadata.gdcs is True:
+            metadata.analysistype = 'GDCS'
+            analysis_count += 1
+            analyses.append(metadata.analysistype)
+        elif metadata.genesippr is True:
+            metadata.analysistype = 'genesippr'
+            analysis_count += 1
+            analyses.append(metadata.analysistype)
+        # Warn that only one type of analysis can be performed at a time
+        elif analysis_count > 1:
+            logging.warning('Cannot perform multiple analyses concurrently. You selected {at}. Please choose only one.'
+                            .format(at=','.join(analyses)))
+        # Default to GeneSeekr
+        else:
+            metadata.analysistype = 'geneseekr'
+    except AttributeError:
         metadata.analysistype = 'geneseekr'
     # Add the start time variable to the object
     metadata.start = start
     return metadata, False
-
-
-# noinspection PyProtectedMember
-def modify_usage_error(subcommand):
-    """
-    Method to append the help menu to a modified usage error when a subcommand is specified, but options are missing
-    """
-    import click
-    from click._compat import get_text_stderr
-    from click.utils import echo
-
-    def show(self, file=None):
-        import sys
-        if file is None:
-            file = get_text_stderr()
-        color = None
-        if self.ctx is not None:
-            color = self.ctx.color
-        echo('Error: %s\n' % self.format_message(), file=file, color=color)
-        # Set the sys.argv to be the first two arguments passed to the script if the subcommand was specified
-        arg2 = sys.argv[1] if sys.argv[1] in ['blastn', 'blastp', 'blastx', 'tblastn', 'tblastx'] else str()
-        sys.argv = [' '.join([sys.argv[0], arg2])] if arg2 else [sys.argv[0]]
-        # Call the help
-        subcommand(['--help'])
-
-    click.exceptions.UsageError.show = show
