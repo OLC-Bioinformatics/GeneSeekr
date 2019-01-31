@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-from accessoryFunctions.accessoryFunctions import SetupLogging
-from geneseekr.parser import modify_usage_error, objector
+from accessoryFunctions.accessoryFunctions import modify_usage_error, SetupLogging
+from geneseekr.parser import objector
 from geneseekr.blast import BLAST
 from time import time
 import click
@@ -40,41 +40,36 @@ click_options = [
     click.option('-u', '--unique',
                  is_flag=True,
                  help='Do not report multiple hits at the same location in a contig. Instead, store the '
-                      'best hit, and ignore the rest')
+                      'best hit, and ignore the rest'),
+    click.option('-f', '--fasta_output',
+                 is_flag=True,
+                 help='Create FASTA-formatted files of the query hits')
 ]
 
 click_nt_options = [
     click.option('-A', '--resfinder',
                  is_flag=True,
-                 default=False,
                  help='Perform ResFinder-like analyses'),
     click.option('-G', '--genesippr',
                  is_flag=True,
-                 default=False,
                  help='Perform Genesippr analyses'),
     click.option('-M', '--MLST',
                  is_flag=True,
-                 default=False,
                  help='Perform MLST allele typing'),
     click.option('-Q', '--GDCS',
                  is_flag=True,
-                 default=False,
                  help='Perform GDCS analyses'),
     click.option('-R', '--rMLST',
                  is_flag=True,
-                 default=False,
                  help='Perform rMLST allele typing'),
     click.option('-S', '--serosippr',
                  is_flag=True,
-                 default=False,
                  help='Perform GDCS analyses'),
     click.option('-X', '--sixteens',
                  is_flag=True,
-                 default=False,
                  help='Perform VirulenceFinder-like analyses'),
     click.option('-V', '--virulence',
                  is_flag=True,
-                 default=False,
                  help='Perform VirulenceFinder-like analyses'),
 ]
 
@@ -160,36 +155,36 @@ def tblastx(**kwargs):
     geneseekr.seekr()
 
 
-def find_subcommand(subcommand_string):
-    """
-    Associate the appropriate function with the supplied BLAST program to use
-    :param subcommand_string:
-    :return:
-    """
-    if subcommand_string == 'blastn':
-        subcommand = blastn
-    elif subcommand_string == 'blastp':
-        subcommand = blastp
-    elif subcommand_string == 'blastx':
-        subcommand = blastn
-    elif subcommand_string == 'tblastn':
-        subcommand = blastn
-    else:
-        subcommand = tblastx
-    return subcommand
-
-
+# Define the list of acceptable sub-programs
+program_list = ['blastn', 'blastp', 'blastx', 'tblastn', 'tblastx']
 # Extract the BLAST command to use from the command line arguments
 try:
-    program = sys.argv[1] if sys.argv[1] in ['blastn', 'blastp', 'blastx', 'tblastn', 'tblastx'] else str()
+    program = sys.argv[1] if sys.argv[1] in program_list else str()
 except IndexError:
     program = str()
 
-# Convert the program string to the appropriate subscommand to use when modifying the usage error - ResFinder
+# If the program was not specified, call the 'group help'
+if not program:
+    # Call the help
+    group(['--help'])
+
+# Convert the program string to the appropriate subcommand to use when modifying the usage error - ResFinder
 # and VirulenceFinder analyses are only available for BLAST programs that use a nt database
-sub_command = find_subcommand(program)
-# Change the default behaviour of click to print the help menu when a subcommand is specified, but is missing arguments
-modify_usage_error(sub_command)
+subcommand_dict = {
+    'blastn': blastn,
+    'blastp': blastp,
+    'blastx': blastx,
+    'tblastn': tblastn,
+    'tblastx': tblastx
+}
+try:
+    sub_command = subcommand_dict[program]
+    # Change the behaviour of click to print the help menu when a subcommand is specified, but is missing arguments
+    modify_usage_error(subcommand=sub_command,
+                       program_list=program_list)
+except KeyError:
+    pass
+
 
 if __name__ == '__main__':
     group()
