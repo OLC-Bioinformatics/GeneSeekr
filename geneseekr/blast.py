@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from accessoryFunctions.accessoryFunctions import MetadataObject
+from accessoryFunctions.accessoryFunctions import GenObject, MetadataObject
 from MLSTsippr.mlst import GeneSippr as MLSTSippr
 from sipprverse_reporter.reports import Reports
 from geneseekr.geneseekr import GeneSeekr
@@ -20,9 +20,11 @@ class BLAST(object):
         """
         self.blast_db()
         self.run_blast()
-        self.add_blast_headers()
+        self.parseable_blast_outputs()
         self.parse_results()
         self.create_reports()
+        if self.export:
+            self.export_fasta()
         self.clean_object()
         logging.info('{at} analyses complete'.format(at=self.analysistype))
 
@@ -74,14 +76,17 @@ class BLAST(object):
                                                      evalue=self.evalue,
                                                      num_threads=self.cpus)
 
-    def add_blast_headers(self):
+    def parseable_blast_outputs(self):
         """
-        Add the headers to the .csv files
+        Makes the BLAST output .csv files easier to read by adding headers, as well as a column that displays the
+        'percent_match' calculation (how well the specific query sequence matches the subject; takes number of
+        matches over the entire subject length, rather than just the percent identity of the match)
         """
         logging.info('Adding headers to {program} .csv outputs'.format(program=self.program))
-        self.geneseekr.add_headers(metadata=self.metadata,
-                                   analysistype=self.analysistype,
-                                   fieldnames=self.fieldnames)
+        self.geneseekr.parseable_blast_outputs(metadata=self.metadata,
+                                               analysistype=self.analysistype,
+                                               fieldnames=self.fieldnames,
+                                               program=self.program)
 
     def parse_results(self):
         """
@@ -131,10 +136,9 @@ class BLAST(object):
                                                               analysistype=self.analysistype,
                                                               reportpath=self.reportpath,
                                                               align=self.align,
-                                                              targetfiles=self.targetfiles,
-                                                              records=self.records,
                                                               program=self.program,
-                                                              targetpath=self.targetpath)
+                                                              targetpath=self.targetpath,
+                                                              cutoff=self.cutoff)
         elif 'virulence' in self.analysistype:
             # VirulenceFinder-specific report
             self.geneseekr.virulencefinder_reporter(self.metadata,
@@ -145,6 +149,7 @@ class BLAST(object):
             self.analysistype = self.analysistype.lower()
             # Create the necessary attributes for the MLST-typing method
             for sample in self.metadata:
+                sample.general.referencegenus = 'ND'
                 sample[self.analysistype].alleles = sorted(list(set(allele.split('_')[0]
                                                                     for allele in sample[self.analysistype]
                                                                     .targetnames)))
@@ -177,10 +182,16 @@ class BLAST(object):
             # Perform typing, and create reports
             typing.reporter()
         elif 'sixteens' in self.analysistype:
+            for sample in self.metadata:
+                if not GenObject.isattr(sample.general, 'closestrefseqgenus'):
+                    sample.general.closestrefseqgenus = 'ND'
             self.metadata = self.geneseekr.sixteens_reporter(metadata=self.metadata,
                                                              analysistype=self.analysistype,
                                                              reportpath=self.reportpath)
-        elif self.analysistype == 'GDCS':
+        elif self.analysistype.lower() == 'gdcs':
+            # Create necessary attributes required for the GDCS reporter
+            for sample in self.metadata:
+                sample.general.closestrefseqgenus = 'ND'
             self.metadata = self.geneseekr.gdcs_reporter(metadata=self.metadata,
                                                          analysistype=self.analysistype,
                                                          reportpath=self.reportpath)
@@ -204,8 +215,18 @@ class BLAST(object):
                                                     analysistype=self.analysistype,
                                                     reportpath=self.reportpath,
                                                     align=self.align,
-                                                    targetfiles=self.targetfiles,
                                                     records=self.records,
+                                                    program=self.program,
+                                                    cutoff=self.cutoff)
+
+    def export_fasta(self):
+        """
+        Create FASTA files of the results
+        """
+        self.metadata = self.geneseekr.export_fasta(metadata=self.metadata,
+                                                    analysistype=self.analysistype,
+                                                    reportpath=self.reportpath,
+                                                    cutoff=self.cutoff,
                                                     program=self.program)
 
     # noinspection PyNoneFunctionAssignment
@@ -281,6 +302,10 @@ class BLAST(object):
             self.targetpath = os.path.join(args.reffilepath, self.analysistype)
         except AttributeError:
             self.targetpath = args.targetpath
+        try:
+            self.export = args.fasta_output
+        except AttributeError:
+            self.export = False
         self.reportpath = args.reportpath
         self.genus_specific = genus_specific
         self.pipeline = pipeline
@@ -306,10 +331,10 @@ class BLAST(object):
         # Fields used for custom outfmt 6 BLAST output:
         self.fieldnames = ['query_id', 'subject_id', 'positives', 'mismatches', 'gaps',
                            'evalue', 'bit_score', 'subject_length', 'alignment_length',
-                           'query_start', 'query_end', 'query_sequence',
-                           'subject_start', 'subject_end', 'subject_sequence']
+                           'query_start', 'query_end', 'subject_start', 'subject_end',
+                           'percent_match', 'query_sequence', 'subject_sequence']
         self.outfmt = "'6 qseqid sseqid positive mismatch gaps " \
-                      "evalue bitscore slen length qstart qend qseq sstart send sseq'"
+                      "evalue bitscore slen length qstart qend sstart send qseq sseq'"
         self.targetfolders = set()
         self.targetfiles = list()
         self.records = dict()
