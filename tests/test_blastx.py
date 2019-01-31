@@ -95,23 +95,30 @@ def test_records():
     assert records[targetfiles[0]]['yojI']
 
 
-def test_blastx():
+def test_blastx(variables):
+    global blastx_report
     blastx_method.metadata = geneseekr.run_blast(metadata=blastx_method.metadata,
                                                  analysistype=blastx_method.analysistype,
                                                  program=blastx_method.program,
                                                  outfmt=blastx_method.outfmt,
                                                  evalue=blastx_method.evalue,
                                                  num_threads=blastx_method.cpus)
-
-
-def test_blastx_report(variables):
-    global blastx_report
-    blastx_report = os.path.join(variables.reportpath, '2018-SEQ-0552_blastx.csv')
+    blastx_report = os.path.join(variables.reportpath, '2018-SEQ-0552_blastx_geneseekr.tsv')
     assert os.path.isfile(blastx_report)
+
+
+def test_enhance_report_parsing():
+    geneseekr.parseable_blast_outputs(metadata=blastx_method.metadata,
+                                      analysistype=blastx_method.analysistype,
+                                      fieldnames=blastx_method.fieldnames,
+                                      program=blastx_method.program)
+    header = open(blastx_report).readline()
+    assert header.split('\t')[0] == 'query_id'
 
 
 def test_blastx_results():
     with open(blastx_report) as blast_results:
+        next(blast_results)
         data = blast_results.readline()
         results = data.split('\t')
         assert int(results[2]) >= 50
@@ -141,20 +148,34 @@ def test_dict_create():
         assert type(sample.geneseekr.protseq) is dict
 
 
+def test_target_folders():
+    global targetfolders, targetfiles, records
+    targetfolders, targetfiles, records = \
+        geneseekr.target_folders(metadata=blastx_method.metadata,
+                                 analysistype=blastx_method.analysistype)
+    assert records[targetfiles[0]]['yojI']
+
+
 def test_report_creation():
     blastx_method.metadata = geneseekr.reporter(metadata=blastx_method.metadata,
                                                 analysistype=blastx_method.analysistype,
                                                 reportpath=blastx_method.reportpath,
                                                 align=blastx_method.align,
-                                                targetfiles=targetfolders,
-                                                records=blastx_method.records,
-                                                program=blastx_method.program)
+                                                records=records,
+                                                program=blastx_method.program,
+                                                cutoff=blastx_method.cutoff)
 
 
 def test_report_csv():
     global geneseekr_csv
     geneseekr_csv = os.path.join(blastx_method.reportpath, 'geneseekr_blastx.csv')
     assert os.path.isfile(geneseekr_csv)
+
+
+def test_detailed_report_csv():
+    global geneseekr_detailed_csv
+    geneseekr_detailed_csv = os.path.join(blastx_method.reportpath, 'geneseekr_blastx_detailed.csv')
+    assert os.path.isfile(geneseekr_detailed_csv)
 
 
 def test_report_xls():
@@ -174,6 +195,19 @@ def test_aaseq():
                sample.geneseekr.blastlist[0]['query_sequence'][:5] == 'MSRIL'
 
 
+def test_fasta_create(variables):
+    global fasta_file
+    geneseekr.export_fasta(metadata=blastx_method.metadata,
+                           analysistype=blastx_method.analysistype,
+                           reportpath=blastx_method.reportpath,
+                           cutoff=blastx_method.cutoff,
+                           program=blastx_method.program)
+    fasta_file = os.path.join(variables.reportpath, '2018-SEQ-0552_geneseekr.fasta')
+    assert os.path.isfile(fasta_file)
+    header = open(fasta_file, 'r').readline().rstrip()
+    assert header == '>2018-SEQ-0552_OXA_12'
+
+
 def test_combined_targets_clean():
     os.remove(blastx_method.combinedtargets)
 
@@ -190,6 +224,14 @@ def test_remove_blastx_report():
 
 def test_remove_geneseekr_csv():
     os.remove(geneseekr_csv)
+
+
+def test_remove_fasta_file():
+    os.remove(fasta_file)
+
+
+def test_removed_detailed_geneseekr_csv():
+    os.remove(geneseekr_detailed_csv)
 
 
 def test_remove_geneseekr_xls():

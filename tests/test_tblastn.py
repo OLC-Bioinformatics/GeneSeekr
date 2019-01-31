@@ -95,23 +95,30 @@ def test_records():
     assert records[targetfiles[0]]['ampH_2_HQ586946']
 
 
-def test_tblastn():
+def test_tblastn(variables):
+    global tblastn_report
     tblastn_method.metadata = geneseekr.run_blast(metadata=tblastn_method.metadata,
                                                   analysistype=tblastn_method.analysistype,
                                                   program=tblastn_method.program,
                                                   outfmt=tblastn_method.outfmt,
                                                   evalue=tblastn_method.evalue,
                                                   num_threads=tblastn_method.cpus)
-
-
-def test_tblastn_report(variables):
-    global tblastn_report
-    tblastn_report = os.path.join(variables.reportpath, 'amr_test_tblastn.csv')
+    tblastn_report = os.path.join(variables.reportpath, 'amr_test_tblastn_resfinder.tsv')
     assert os.path.isfile(tblastn_report)
+
+
+def test_enhance_report_parsing():
+    geneseekr.parseable_blast_outputs(metadata=tblastn_method.metadata,
+                                      analysistype=tblastn_method.analysistype,
+                                      fieldnames=tblastn_method.fieldnames,
+                                      program=tblastn_method.program)
+    header = open(tblastn_report).readline()
+    assert header.split('\t')[0] == 'query_id'
 
 
 def test_tblastn_results():
     with open(tblastn_report) as blast_results:
+        next(blast_results)
         data = blast_results.readline()
         results = data.split('\t')
         assert int(results[2]) >= 50
@@ -146,10 +153,9 @@ def test_report_creation():
                                                            analysistype=tblastn_method.analysistype,
                                                            reportpath=tblastn_method.reportpath,
                                                            align=tblastn_method.align,
-                                                           targetfiles=targetfolders,
-                                                           records=tblastn_method.records,
                                                            program=tblastn_method.program,
-                                                           targetpath=tblastn_method.targetpath)
+                                                           targetpath=tblastn_method.targetpath,
+                                                           cutoff=tblastn_method.cutoff)
 
 
 def test_report_existance():
@@ -173,6 +179,19 @@ def test_aaseq():
         assert sample.resfinder.blastlist[0]['query_sequence'][:5] == 'MSRIL'
 
 
+def test_fasta_create(variables):
+    global fasta_file
+    geneseekr.export_fasta(metadata=tblastn_method.metadata,
+                           analysistype=tblastn_method.analysistype,
+                           reportpath=tblastn_method.reportpath,
+                           cutoff=tblastn_method.cutoff,
+                           program=tblastn_method.program)
+    fasta_file = os.path.join(variables.reportpath, 'amr_test_resfinder.fasta')
+    assert os.path.isfile(fasta_file)
+    header = open(fasta_file, 'r').readline().rstrip()
+    assert header == '>amr_test_blaOXA_427_1_KX827604'
+
+
 def test_combined_targets_clean():
     os.remove(tblastn_method.combinedtargets)
 
@@ -185,6 +204,10 @@ def test_makeblastdb_clean(variables):
 
 def test_remove_tblastn_report():
     os.remove(tblastn_report)
+
+
+def test_remove_fasta_file():
+    os.remove(fasta_file)
 
 
 def test_remove_geneseekr_report():

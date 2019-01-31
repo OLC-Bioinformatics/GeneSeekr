@@ -95,23 +95,30 @@ def test_records():
     assert records[targetfiles[0]]['yojI']
 
 
-def test_blastp():
+def test_blastp(variables):
+    global blastp_report
     blastp_method.metadata = geneseekr.run_blast(metadata=blastp_method.metadata,
                                                  analysistype=blastp_method.analysistype,
                                                  program=blastp_method.program,
                                                  outfmt=blastp_method.outfmt,
                                                  evalue=blastp_method.evalue,
                                                  num_threads=blastp_method.cpus)
-
-
-def test_blastp_report(variables):
-    global blastp_report
-    blastp_report = os.path.join(variables.reportpath, 'amr_test_blastp.csv')
+    blastp_report = os.path.join(variables.reportpath, 'amr_test_blastp_geneseekr.tsv')
     assert os.path.isfile(blastp_report)
+
+
+def test_enhance_report_parsing():
+    geneseekr.parseable_blast_outputs(metadata=blastp_method.metadata,
+                                      analysistype=blastp_method.analysistype,
+                                      fieldnames=blastp_method.fieldnames,
+                                      program=blastp_method.program)
+    header = open(blastp_report).readline()
+    assert header.split('\t')[0] == 'query_id'
 
 
 def test_blastp_results():
     with open(blastp_report) as blast_results:
+        next(blast_results)
         data = blast_results.readline()
         results = data.split('\t')
         assert int(results[2]) >= 50
@@ -146,15 +153,14 @@ def test_report_creation():
                                                           analysistype=blastp_method.analysistype,
                                                           reportpath=blastp_method.reportpath,
                                                           align=blastp_method.align,
-                                                          targetfiles=targetfolders,
-                                                          records=blastp_method.records,
                                                           program=blastp_method.program,
-                                                          targetpath=blastp_method.targetpath)
+                                                          targetpath=blastp_method.targetpath,
+                                                          cutoff=blastp_method.cutoff)
 
 
 def test_report_csv():
     global geneseekr_csv
-    geneseekr_csv = os.path.join(blastp_method.reportpath, 'amr_test_blastp.csv')
+    geneseekr_csv = os.path.join(blastp_method.reportpath, 'amr_test_blastp_geneseekr.tsv')
     assert os.path.isfile(geneseekr_csv)
 
 
@@ -175,6 +181,19 @@ def test_aaseq():
                sample.geneseekr.blastlist[0]['query_sequence'][:4] == 'MSRI'
 
 
+def test_fasta_create(variables):
+    global fasta_file
+    geneseekr.export_fasta(metadata=blastp_method.metadata,
+                           analysistype=blastp_method.analysistype,
+                           reportpath=blastp_method.reportpath,
+                           cutoff=blastp_method.cutoff,
+                           program=blastp_method.program)
+    fasta_file = os.path.join(variables.reportpath, 'amr_test_geneseekr.fasta')
+    assert os.path.isfile(fasta_file)
+    header = open(fasta_file, 'r').readline().rstrip()
+    assert header == '>amr_test_OXA_12'
+
+
 def test_combined_targets_clean():
     os.remove(blastp_method.combinedtargets)
 
@@ -187,6 +206,10 @@ def test_makeblastdb_clean(variables):
 
 def test_remove_blastp_report():
     os.remove(blastp_report)
+
+
+def test_remove_fasta_file():
+    os.remove(fasta_file)
 
 
 def test_remove_geneseekr_xls():

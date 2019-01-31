@@ -95,23 +95,30 @@ def test_records():
     assert records[targetfiles[0]]['blaOXA_427_1_KX827604']
 
 
-def test_blastn():
+def test_blastn(variables):
+    global blastn_report
     blastn_method.metadata = geneseekr.run_blast(metadata=blastn_method.metadata,
                                                  analysistype=blastn_method.analysistype,
                                                  program=blastn_method.program,
                                                  outfmt=blastn_method.outfmt,
                                                  evalue=blastn_method.evalue,
                                                  num_threads=blastn_method.cpus)
-
-
-def test_blastn_report(variables):
-    global blastn_report
-    blastn_report = os.path.join(variables.reportpath, '2018-SEQ-0552_blastn.csv')
+    blastn_report = os.path.join(variables.reportpath, '2018-SEQ-0552_blastn_resfinder.tsv')
     assert os.path.isfile(blastn_report)
+
+
+def test_enhance_report_parsing():
+    geneseekr.parseable_blast_outputs(metadata=blastn_method.metadata,
+                                      analysistype=blastn_method.analysistype,
+                                      fieldnames=blastn_method.fieldnames,
+                                      program=blastn_method.program)
+    header = open(blastn_report).readline()
+    assert header.split('\t')[0] == 'query_id'
 
 
 def test_blastn_results():
     with open(blastn_report) as blast_results:
+        next(blast_results)
         data = blast_results.readline()
         results = data.split('\t')
         assert int(results[2]) >= 179
@@ -146,10 +153,9 @@ def test_report_creation():
                                                           analysistype=blastn_method.analysistype,
                                                           reportpath=blastn_method.reportpath,
                                                           align=blastn_method.align,
-                                                          targetfiles=targetfolders,
-                                                          records=blastn_method.records,
                                                           program=blastn_method.program,
-                                                          targetpath=blastn_method.targetpath)
+                                                          targetpath=blastn_method.targetpath,
+                                                          cutoff=blastn_method.cutoff)
 
 
 def test_report_existance():
@@ -170,7 +176,20 @@ def test_parse_results():
 
 def test_aaseq():
     for sample in blastn_method.metadata:
-        assert sample.resfinder.protseq['blaOXA_427_1_KX827604'][:5] == 'MSRIL'
+        assert sample.resfinder.protseq['blaOXA_427_1_KX827604'][0][:5] == 'MSRIL'
+
+
+def test_fasta_create(variables):
+    global fasta_file
+    geneseekr.export_fasta(metadata=blastn_method.metadata,
+                           analysistype=blastn_method.analysistype,
+                           reportpath=blastn_method.reportpath,
+                           cutoff=blastn_method.cutoff,
+                           program=blastn_method.program)
+    fasta_file = os.path.join(variables.reportpath, '2018-SEQ-0552_resfinder.fasta')
+    assert os.path.isfile(fasta_file)
+    header = open(fasta_file, 'r').readline().rstrip()
+    assert header == '>2018-SEQ-0552_blaOXA_427_1_KX827604'
 
 
 def test_combined_targets_clean():
@@ -189,6 +208,10 @@ def test_remove_blastn_report():
 
 def test_remove_geneseekr_report():
     os.remove(geneseekr_report)
+
+
+def test_remove_fasta_file():
+    os.remove(fasta_file)
 
 
 def test_remove_report_path():
