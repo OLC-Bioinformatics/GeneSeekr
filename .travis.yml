@@ -11,7 +11,6 @@ before_install:
   - conda config --add channels conda-forge
   - conda config --add channels bioconda
   - conda install -c adamkoziol geneseekr
-  - source activate geneseekr
   
 script:
   - pytest tests/test_imports.py
