@@ -1,8 +1,8 @@
 {% set name = "geneseekr" %}
-{% set version = "0.3.4" %}
+{% set version = "0.3.5" %}
 {% set file_ext = "tar.gz" %}
 {% set hash_type = "sha256" %}
-{% set hash_value = "acb4aeb89aa3c7e8aedaff37a6d0b960f21746f43cd515da655b5f6880cbeca9" %}
+{% set hash_value = "69508bf6d6c34257d61bc89f158655e8e6ead1a2404a7abb1a78f9c8745c0cf6" %}
 
 package:
   name: '{{ name|lower }}'
@@ -33,11 +33,7 @@ requirements:
     - xlsxwriter=1.1.8=py_0
     - pytest=4.5.0=py36_0
     - pysam=0.15.2=py36h4b7d16d_3
-    - sipprverse=0.2.27=py_0 
-
-test:
-  imports:
-    - geneseekr
+    - genemethods=0.0.0.1=py_0 
 
 about:
   home: https://github.com/OLC-Bioinformatics/GeneSeekr

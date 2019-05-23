@@ -8,13 +8,14 @@ before_install:
   - hash -r
   - conda config --set always_yes yes --set changeps1 no
   - conda update -q conda
-  - conda env create -f environment.yml
+  - conda install -c adamkoziol geneseekr
   - source activate geneseekr
   
 script:
-  - python -m pytest tests/test_blastn.py
-  - python -m pytest tests/test_blastp.py
-  - python -m pytest tests/test_blastx.py
-  - python -m pytest tests/test_tblastn.py
-  - python -m pytest tests/test_tblastx.py
-  - python -m pytest tests/test_imports.py
+  - pytest tests/test_imports.py
+  - pytest tests/test_blastn.py
+  - pytest tests/test_blastp.py
+  - pytest tests/test_blastx.py
+  - pytest tests/test_tblastn.py
+  - pytest tests/test_tblastx.py
+  - pytest tests/test_imports.py
