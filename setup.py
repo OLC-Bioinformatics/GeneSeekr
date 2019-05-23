@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="geneseekr",
-    version="0.3.3",
+    version="0.3.4",
     packages=find_packages(),
     scripts=['GeneSeekr'],
     author="Adam Koziol",

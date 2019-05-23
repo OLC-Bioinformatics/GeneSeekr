@@ -1,0 +1,47 @@
+{% set name = "geneseekr" %}
+{% set version = "0.3.4" %}
+{% set file_ext = "tar.gz" %}
+{% set hash_type = "sha256" %}
+{% set hash_value = "acb4aeb89aa3c7e8aedaff37a6d0b960f21746f43cd515da655b5f6880cbeca9" %}
+
+package:
+  name: '{{ name|lower }}'
+  version: '{{ version }}'
+
+source:
+  fn: '{{ name }}-{{ version }}.{{ file_ext }}'
+  url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.{{ file_ext }}
+  '{{ hash_type }}': '{{ hash_value }}'
+
+build:
+  number: 0
+  noarch: python
+  script: python setup.py install --single-version-externally-managed --record=record.txt
+
+requirements:
+  host:
+    - python >=3
+  run:
+    - olctools=1.0.6=py_0
+    - python=3.6.8=h0371630_0
+    - blast=2.7.1=h4422958_6
+    - biopython=1.72=py36_0
+    - pandas=0.23.4=py36hf8a1672_0
+    - setuptools=40.4.3=py36_0
+    - numpy=1.15.4=py36h1d66e8a_0
+    - click=7.0=py_0
+    - xlsxwriter=1.1.8=py_0
+    - pytest=4.5.0=py36_0
+    - pysam=0.15.2=py36h4b7d16d_3
+    - sipprverse=0.2.27=py_0 
+
+test:
+  imports:
+    - geneseekr
+
+about:
+  home: https://github.com/OLC-Bioinformatics/GeneSeekr
+  license: MIT
+  license_family: MIT
+  summary: Object oriented gene target finding software
+  description: "This pipeline searches for gene targets in FASTA files."
