@@ -60,8 +60,9 @@ class Parser(object):
         except IndexError:
             combinetargets(self.targets, self.targetpath)
             self.combinedtargets = glob(os.path.join(self.targetpath, '*.fasta'))[0]
-        assert self.combinedtargets, 'Could not find any files with an extension starting with "fa" in {}. ' \
-                                     'Please check to ensure that your target path is correct'.format(self.targetpath)
+        assert self.combinedtargets, 'Could not find any files with an extension starting with "fa" in ' \
+                                     '{target_path}. Please check to ensure that your target path is correct'\
+            .format(target_path=self.targetpath)
 
     def genus_targets(self, metadata):
         """
@@ -81,7 +82,9 @@ class Parser(object):
                 glob(os.path.join(metadata[self.analysistype].targetpath, '*.fasta'))[0]
         except IndexError:
             try:
-                combinetargets(self.targets, self.targetpath)
+                combinetargets(targets=metadata[self.analysistype].targets,
+                               targetpath=metadata[self.analysistype].targetpath,
+                               clear_format=True)
                 metadata[self.analysistype].combinedtargets = \
                     glob(os.path.join(metadata[self.analysistype].targetpath, '*.fasta'))[0]
             except IndexError:
