@@ -149,7 +149,8 @@ class BLAST(object):
             self.analysistype = self.analysistype.lower()
             # Create the necessary attributes for the MLST-typing method
             for sample in self.metadata:
-                sample.general.referencegenus = 'ND'
+                if not hasattr(sample.general, 'referencegenus'):
+                    sample.general.referencegenus = 'ND'
                 sample[self.analysistype].alleles = sorted(list(set(allele.split('_')[0]
                                                                     for allele in sample[self.analysistype]
                                                                     .targetnames)))
@@ -170,7 +171,7 @@ class BLAST(object):
                     sample[self.analysistype].profile = glob(os.path.join(sample[self.analysistype].targetpath,
                                                                           '*.txt'))[0]
                 except IndexError:
-                    sample[self.analysistype].profile = 'NA'
+                    sample[self.analysistype].profile = 'ND'
             # Create the typing object
             typing = MLST(args=self,
                           pipelinecommit='',
@@ -191,7 +192,8 @@ class BLAST(object):
         elif self.analysistype.lower() == 'gdcs':
             # Create necessary attributes required for the GDCS reporter
             for sample in self.metadata:
-                sample.general.closestrefseqgenus = 'ND'
+                if not GenObject.isattr(sample.general, 'closestrefseqgenus'):
+                    sample.general.closestrefseqgenus = 'ND'
             self.metadata = self.geneseekr.gdcs_reporter(metadata=self.metadata,
                                                          analysistype=self.analysistype,
                                                          reportpath=self.reportpath)
