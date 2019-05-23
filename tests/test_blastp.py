@@ -5,7 +5,6 @@ from geneseekr.blast import BLAST
 import multiprocessing
 from glob import glob
 from time import time
-import pytest
 import os
 
 test_path = os.path.abspath(os.path.dirname(__file__))
@@ -13,7 +12,6 @@ test_path = os.path.abspath(os.path.dirname(__file__))
 __author__ = 'adamkoziol'
 
 
-@pytest.fixture()
 def variables():
     v = MetadataObject()
     datapath = os.path.join(test_path, 'testdata')
@@ -31,23 +29,21 @@ def variables():
     return v
 
 
-def variable_update():
-    global method
-    method = method_init(variables())
-
-
-@pytest.fixture()
-def method_init(variables, analysistype, program, align, unique):
-    global method
-    variables.analysistype = analysistype
-    variables.program = program
-    variables.align = align
-    variables.unique = unique
-    method = BLAST(variables)
+def method_init(analysistype, program, align, unique):
+    global var
+    var = variables()
+    var.analysistype = analysistype
+    var.program = program
+    var.align = align
+    var.unique = unique
+    method = BLAST(var)
     return method
 
 
-blastp_method = method_init(variables(), 'geneseekr', 'blastp', True, True)
+blastp_method = method_init(analysistype='geneseekr',
+                            program='blastp',
+                            align=True,
+                            unique=True)
 
 
 def test_parser():
@@ -66,12 +62,12 @@ def test_strain():
     assert os.path.basename(blastp_method.strains[0]) == 'amr_test.fasta'
 
 
-def test_makeblastdb(variables):
+def test_makeblastdb():
     global geneseekr
     geneseekr = GeneSeekr()
     geneseekr.makeblastdb(fasta=blastp_method.combinedtargets,
                           program=blastp_method.program)
-    assert os.path.isfile(os.path.join(variables.targetpath, 'combinedtargets.psq'))
+    assert os.path.isfile(os.path.join(var.targetpath, 'combinedtargets.psq'))
 
 
 def test_variable_populate():
@@ -95,7 +91,7 @@ def test_records():
     assert records[targetfiles[0]]['yojI']
 
 
-def test_blastp(variables):
+def test_blastp():
     global blastp_report
     blastp_method.metadata = geneseekr.run_blast(metadata=blastp_method.metadata,
                                                  analysistype=blastp_method.analysistype,
@@ -103,7 +99,7 @@ def test_blastp(variables):
                                                  outfmt=blastp_method.outfmt,
                                                  evalue=blastp_method.evalue,
                                                  num_threads=blastp_method.cpus)
-    blastp_report = os.path.join(variables.reportpath, 'amr_test_blastp_geneseekr.tsv')
+    blastp_report = os.path.join(var.reportpath, 'amr_test_blastp_geneseekr.tsv')
     assert os.path.isfile(blastp_report)
 
 
@@ -181,14 +177,14 @@ def test_aaseq():
                sample.geneseekr.blastlist[0]['query_sequence'][:4] == 'MSRI'
 
 
-def test_fasta_create(variables):
+def test_fasta_create():
     global fasta_file
     geneseekr.export_fasta(metadata=blastp_method.metadata,
                            analysistype=blastp_method.analysistype,
                            reportpath=blastp_method.reportpath,
                            cutoff=blastp_method.cutoff,
                            program=blastp_method.program)
-    fasta_file = os.path.join(variables.reportpath, 'amr_test_geneseekr.fasta')
+    fasta_file = os.path.join(var.reportpath, 'amr_test_geneseekr.fasta')
     assert os.path.isfile(fasta_file)
     header = open(fasta_file, 'r').readline().rstrip()
     assert header == '>amr_test_OXA_12'
@@ -198,8 +194,8 @@ def test_combined_targets_clean():
     os.remove(blastp_method.combinedtargets)
 
 
-def test_makeblastdb_clean(variables):
-    databasefiles = glob(os.path.join(variables.targetpath, 'combinedtargets.p*'))
+def test_makeblastdb_clean():
+    databasefiles = glob(os.path.join(var.targetpath, 'combinedtargets.p*'))
     for dbfile in databasefiles:
         os.remove(dbfile)
 

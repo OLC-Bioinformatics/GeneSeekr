@@ -5,7 +5,6 @@ from geneseekr.blast import BLAST
 import multiprocessing
 from glob import glob
 from time import time
-import pytest
 import os
 
 test_path = os.path.abspath(os.path.dirname(__file__))
@@ -14,7 +13,6 @@ test_path = os.path.abspath(os.path.dirname(__file__))
 __author__ = 'adamkoziol'
 
 
-@pytest.fixture()
 def variables():
     v = MetadataObject()
     datapath = os.path.join(test_path, 'testdata')
@@ -32,23 +30,21 @@ def variables():
     return v
 
 
-def variable_update():
-    global method
-    method = method_init(variables())
-
-
-@pytest.fixture()
-def method_init(variables, analysistype, program, align, unique):
-    global method
-    variables.analysistype = analysistype
-    variables.program = program
-    variables.align = align
-    variables.unique = unique
-    method = BLAST(variables)
+def method_init(analysistype, program, align, unique):
+    global var
+    var = variables()
+    var.analysistype = analysistype
+    var.program = program
+    var.align = align
+    var.unique = unique
+    method = BLAST(var)
     return method
 
 
-tblastx_method = method_init(variables(), 'resfinder', 'tblastx', True, True)
+tblastx_method = method_init(analysistype='resfinder',
+                             program='tblastx',
+                             align=True,
+                             unique=True)
 
 
 def test_parser():
@@ -67,12 +63,12 @@ def test_strain():
     assert os.path.basename(tblastx_method.strains[0]) == '2018-SEQ-0552.fasta'
 
 
-def test_makeblastdb(variables):
+def test_makeblastdb():
     global geneseekr
     geneseekr = GeneSeekr()
     geneseekr.makeblastdb(fasta=tblastx_method.combinedtargets,
                           program=tblastx_method.program)
-    assert os.path.isfile(os.path.join(variables.targetpath, 'combinedtargets.nsq'))
+    assert os.path.isfile(os.path.join(var.targetpath, 'combinedtargets.nsq'))
 
 
 def test_variable_populate():
@@ -96,7 +92,7 @@ def test_records():
     assert records[targetfiles[0]]['ampH_2_HQ586946']
 
 
-def test_tblastx(variables):
+def test_tblastx():
     global tblastx_report
     tblastx_method.metadata = geneseekr.run_blast(metadata=tblastx_method.metadata,
                                                   analysistype=tblastx_method.analysistype,
@@ -104,9 +100,8 @@ def test_tblastx(variables):
                                                   outfmt=tblastx_method.outfmt,
                                                   evalue=tblastx_method.evalue,
                                                   num_threads=tblastx_method.cpus)
-    tblastx_report = os.path.join(variables.reportpath, '2018-SEQ-0552_tblastx_resfinder.tsv')
+    tblastx_report = os.path.join(var.reportpath, '2018-SEQ-0552_tblastx_resfinder.tsv')
     assert os.path.isfile(tblastx_report)
-
 
 
 def test_enhance_report_parsing():
@@ -181,14 +176,14 @@ def test_aaseq():
         assert sample.resfinder.blastlist[0]['query_sequence'][:5] == 'MSRIL'
 
 
-def test_fasta_create(variables):
+def test_fasta_create():
     global fasta_file
     geneseekr.export_fasta(metadata=tblastx_method.metadata,
                            analysistype=tblastx_method.analysistype,
                            reportpath=tblastx_method.reportpath,
                            cutoff=tblastx_method.cutoff,
                            program=tblastx_method.program)
-    fasta_file = os.path.join(variables.reportpath, '2018-SEQ-0552_resfinder.fasta')
+    fasta_file = os.path.join(var.reportpath, '2018-SEQ-0552_resfinder.fasta')
     assert os.path.isfile(fasta_file)
     header = open(fasta_file, 'r').readline().rstrip()
     assert header == '>2018-SEQ-0552_ampH_2_HQ586946'
@@ -198,8 +193,8 @@ def test_combined_targets_clean():
     os.remove(tblastx_method.combinedtargets)
 
 
-def test_makeblastdb_clean(variables):
-    databasefiles = glob(os.path.join(variables.targetpath, 'combinedtargets.n*'))
+def test_makeblastdb_clean():
+    databasefiles = glob(os.path.join(var.targetpath, 'combinedtargets.n*'))
     for dbfile in databasefiles:
         os.remove(dbfile)
 
@@ -214,6 +209,7 @@ def test_remove_geneseekr_report():
 
 def test_remove_fasta_file():
     os.remove(fasta_file)
+
 
 def test_remove_report_path():
     os.rmdir(tblastx_method.reportpath)

@@ -5,7 +5,6 @@ from geneseekr.blast import BLAST
 import multiprocessing
 from glob import glob
 from time import time
-import pytest
 import os
 
 test_path = os.path.abspath(os.path.dirname(__file__))
@@ -13,7 +12,6 @@ test_path = os.path.abspath(os.path.dirname(__file__))
 __author__ = 'adamkoziol'
 
 
-@pytest.fixture()
 def variables():
     v = MetadataObject()
     datapath = os.path.join(test_path, 'testdata')
@@ -31,23 +29,21 @@ def variables():
     return v
 
 
-def variable_update():
-    global method
-    method = method_init(variables())
-
-
-@pytest.fixture()
-def method_init(variables, analysistype, program, align, unique):
-    global method
-    variables.analysistype = analysistype
-    variables.program = program
-    variables.align = align
-    variables.unique = unique
-    method = BLAST(variables)
+def method_init(analysistype, program, align, unique):
+    global var
+    var = variables()
+    var.analysistype = analysistype
+    var.program = program
+    var.align = align
+    var.unique = unique
+    method = BLAST(var)
     return method
 
 
-blastn_method = method_init(variables(), 'resfinder', 'blastn', True, True)
+blastn_method = method_init(analysistype='resfinder',
+                            program='blastn',
+                            align=True,
+                            unique=True)
 
 
 def test_parser():
@@ -66,12 +62,12 @@ def test_strain():
     assert os.path.basename(blastn_method.strains[0]) == '2018-SEQ-0552.fasta'
 
 
-def test_makeblastdb(variables):
+def test_makeblastdb():
     global geneseekr
     geneseekr = GeneSeekr()
     geneseekr.makeblastdb(fasta=blastn_method.combinedtargets,
                           program=blastn_method.program)
-    assert os.path.isfile(os.path.join(variables.targetpath, 'combinedtargets.nsq'))
+    assert os.path.isfile(os.path.join(var.targetpath, 'combinedtargets.nsq'))
 
 
 def test_variable_populate():
@@ -95,7 +91,7 @@ def test_records():
     assert records[targetfiles[0]]['blaOXA_427_1_KX827604']
 
 
-def test_blastn(variables):
+def test_blastn():
     global blastn_report
     blastn_method.metadata = geneseekr.run_blast(metadata=blastn_method.metadata,
                                                  analysistype=blastn_method.analysistype,
@@ -103,7 +99,7 @@ def test_blastn(variables):
                                                  outfmt=blastn_method.outfmt,
                                                  evalue=blastn_method.evalue,
                                                  num_threads=blastn_method.cpus)
-    blastn_report = os.path.join(variables.reportpath, '2018-SEQ-0552_blastn_resfinder.tsv')
+    blastn_report = os.path.join(var.reportpath, '2018-SEQ-0552_blastn_resfinder.tsv')
     assert os.path.isfile(blastn_report)
 
 
@@ -179,14 +175,14 @@ def test_aaseq():
         assert sample.resfinder.protseq['blaOXA_427_1_KX827604'][0][:5] == 'MSRIL'
 
 
-def test_fasta_create(variables):
+def test_fasta_create():
     global fasta_file
     geneseekr.export_fasta(metadata=blastn_method.metadata,
                            analysistype=blastn_method.analysistype,
                            reportpath=blastn_method.reportpath,
                            cutoff=blastn_method.cutoff,
                            program=blastn_method.program)
-    fasta_file = os.path.join(variables.reportpath, '2018-SEQ-0552_resfinder.fasta')
+    fasta_file = os.path.join(var.reportpath, '2018-SEQ-0552_resfinder.fasta')
     assert os.path.isfile(fasta_file)
     header = open(fasta_file, 'r').readline().rstrip()
     assert header == '>2018-SEQ-0552_blaOXA_427_1_KX827604'
@@ -196,8 +192,8 @@ def test_combined_targets_clean():
     os.remove(blastn_method.combinedtargets)
 
 
-def test_makeblastdb_clean(variables):
-    databasefiles = glob(os.path.join(variables.targetpath, 'combinedtargets.n*'))
+def test_makeblastdb_clean():
+    databasefiles = glob(os.path.join(var.targetpath, 'combinedtargets.n*'))
     for dbfile in databasefiles:
         os.remove(dbfile)
 
