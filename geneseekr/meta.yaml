@@ -1,8 +1,8 @@
 {% set name = "geneseekr" %}
-{% set version = "0.3.5" %}
+{% set version = "0.3.6" %}
 {% set file_ext = "tar.gz" %}
 {% set hash_type = "sha256" %}
-{% set hash_value = "69508bf6d6c34257d61bc89f158655e8e6ead1a2404a7abb1a78f9c8745c0cf6" %}
+{% set hash_value = "6d89e7f1ad5360030c2f79be05239bb89a346b2c4e75bdd2bfd715c8e9848394" %}
 
 package:
   name: '{{ name|lower }}'
@@ -14,7 +14,7 @@ source:
   '{{ hash_type }}': '{{ hash_value }}'
 
 build:
-  number: 0
+  number: 1
   noarch: python
   script: python setup.py install --single-version-externally-managed --record=record.txt
 
@@ -22,18 +22,13 @@ requirements:
   host:
     - python >=3
   run:
-    - olctools=1.0.6=py_0
     - python=3.6.8=h0371630_0
     - blast=2.7.1=h4422958_6
-    - biopython=1.72=py36_0
-    - pandas=0.23.4=py36hf8a1672_0
-    - setuptools=40.4.3=py36_0
-    - numpy=1.15.4=py36h1d66e8a_0
-    - click=7.0=py_0
-    - xlsxwriter=1.1.8=py_0
-    - pytest=4.5.0=py36_0
-    - pysam=0.15.2=py36h4b7d16d_3
-    - genemethods=0.0.0.1=py_0 
+    - genemethods=0.0.0.10=py_0 
+
+test:
+  imports:
+    - tests
 
 about:
   home: https://github.com/OLC-Bioinformatics/GeneSeekr

@@ -1,7 +1,7 @@
-#!/usr/bin/env python 3
-from accessoryFunctions.accessoryFunctions import MetadataObject
-from geneseekr.geneseekr import GeneSeekr
-from geneseekr.blast import BLAST
+#!/usr/bin/env python3
+from olctools.accessoryFunctions.accessoryFunctions import MetadataObject
+from genemethods.geneseekr.geneseekr import GeneSeekr
+from genemethods.geneseekr.blast import BLAST
 import multiprocessing
 from glob import glob
 from time import time

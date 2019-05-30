@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-from accessoryFunctions.accessoryFunctions import modify_usage_error, SetupLogging
-from geneseekr.parser import objector
-from geneseekr.blast import BLAST
+from olctools.accessoryFunctions.accessoryFunctions import modify_usage_error, SetupLogging
+from genemethods.geneseekr.parser import objector
+from genemethods.geneseekr.blast import BLAST
 from time import time
 import click
 import sys
@@ -13,7 +13,7 @@ start = time()
 
 # https://stackoverflow.com/a/40195800
 click_options = [
-    click.version_option(version='1.0.0'),
+    click.version_option(version='0.3.6'),
     click.option('-s', '--sequencepath',
                  required=True,
                  help='Specify input fasta folder'),
