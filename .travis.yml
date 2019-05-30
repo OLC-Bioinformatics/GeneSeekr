@@ -10,7 +10,7 @@ before_install:
   - conda update -q conda
   - conda config --add channels conda-forge
   - conda config --add channels bioconda
-  - conda install -c adamkoziol geneseekr
+  - conda install -c olcbioinformatics geneseekr
   
 script:
   - pytest tests/test_imports.py
