@@ -168,7 +168,7 @@ def test_report_xls():
 
 def test_parse_results():
     for sample in blastp_method.metadata:
-        assert sample.geneseekr.blastresults['OXA_12'] == 94.19
+        assert sample.geneseekr.blastresults['OXA_12'] == 91.86
 
 
 def test_aaseq():
