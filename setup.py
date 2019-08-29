@@ -3,7 +3,7 @@ import os
 
 setup(
     name="geneseekr",
-    version="0.3.6",
+    version="0.3.7",
     packages=find_packages(),
     scripts=[
         os.path.join('geneseekr', 'GeneSeekr')

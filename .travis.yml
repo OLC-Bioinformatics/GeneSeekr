@@ -19,4 +19,3 @@ script:
   - pytest tests/test_blastx.py
   - pytest tests/test_tblastn.py
   - pytest tests/test_tblastx.py
-  - pytest tests/test_imports.py
