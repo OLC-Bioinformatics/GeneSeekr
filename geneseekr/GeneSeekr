@@ -13,7 +13,7 @@ start = time()
 
 # https://stackoverflow.com/a/40195800
 click_options = [
-    click.version_option(version='0.3.6'),
+    click.version_option(version='0.3.8'),
     click.option('-s', '--sequencepath',
                  required=True,
                  help='Specify input fasta folder'),
@@ -50,6 +50,9 @@ click_nt_options = [
     click.option('-A', '--resfinder',
                  is_flag=True,
                  help='Perform ResFinder-like analyses'),
+    click.option('-C', '--cgMLST',
+                 is_flag=True,
+                 help='Perform cgMLST analyses'),
     click.option('-G', '--genesippr',
                  is_flag=True,
                  help='Perform Genesippr analyses'),
