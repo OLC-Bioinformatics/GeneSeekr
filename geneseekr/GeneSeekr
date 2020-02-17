@@ -13,7 +13,7 @@ start = time()
 
 # https://stackoverflow.com/a/40195800
 click_options = [
-    click.version_option(version='0.3.8'),
+    click.version_option(version='0.5.0'),
     click.option('-s', '--sequencepath',
                  required=True,
                  help='Specify input fasta folder'),
@@ -27,9 +27,6 @@ click_options = [
                  type=int,
                  default=70,
                  help='Minimum sequence identity threshold for a match to be reported. Default is 70%'),
-    click.option('-e', '--evalue',
-                 default='1E-5',
-                 help='Minimum evalue to use for BLAST analyses. Default is 1E-5'),
     click.option('-n', '--numthreads',
                  type=int,
                  help='Specify number of threads. Defaults to the number of cores in the system'),
@@ -45,6 +42,17 @@ click_options = [
                  is_flag=True,
                  help='Create FASTA-formatted files of the query hits')
 ]
+
+click_blast_options = [
+    click.option('-e', '--evalue',
+                     default='1E-5',
+                     help='Minimum evalue to use for BLAST analyses. Default is 1E-5'),
+]
+
+click_kma_options = [
+
+]
+
 
 click_nt_options = [
     click.option('-A', '--resfinder',
@@ -92,6 +100,7 @@ def group():
 
 @group.command()
 @add_options(click_options)
+@add_options(click_blast_options)
 @add_options(click_nt_options)
 def blastn(**kwargs):
     """
@@ -106,6 +115,7 @@ def blastn(**kwargs):
 
 @group.command()
 @add_options(click_options)
+@add_options(click_blast_options)
 def blastp(**kwargs):
     """
     protein query: protein db
@@ -119,6 +129,7 @@ def blastp(**kwargs):
 
 @group.command()
 @add_options(click_options)
+@add_options(click_blast_options)
 def blastx(**kwargs):
     """
     translated nt query: protein db
@@ -133,6 +144,7 @@ def blastx(**kwargs):
 @group.command()
 @add_options(click_options)
 @add_options(click_nt_options)
+@add_options(click_blast_options)
 def tblastn(**kwargs):
     """
     protein query: translated nt db
@@ -147,6 +159,7 @@ def tblastn(**kwargs):
 @group.command()
 @add_options(click_options)
 @add_options(click_nt_options)
+@add_options(click_blast_options)
 def tblastx(**kwargs):
     """
     translated nt query: translated nt db
@@ -158,8 +171,20 @@ def tblastx(**kwargs):
     geneseekr.seekr()
 
 
+@group.command()
+@add_options(click_options)
+@add_options(click_nt_options)
+@add_options(click_kma_options)
+def kma(**kwargs):
+    """
+
+    """
+    metadata, pipeline = objector(kwargs, start)
+    metadata.program = 'kma'
+
+
 # Define the list of acceptable sub-programs
-program_list = ['blastn', 'blastp', 'blastx', 'tblastn', 'tblastx']
+program_list = ['blastn', 'blastp', 'blastx', 'tblastn', 'tblastx', 'kma']
 # Extract the BLAST command to use from the command line arguments
 try:
     program = sys.argv[1] if sys.argv[1] in program_list else str()
@@ -178,7 +203,8 @@ subcommand_dict = {
     'blastp': blastp,
     'blastx': blastx,
     'tblastn': tblastn,
-    'tblastx': tblastx
+    'tblastx': tblastx,
+    'kma': kma
 }
 try:
     sub_command = subcommand_dict[program]
