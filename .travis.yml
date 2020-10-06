@@ -1,6 +1,6 @@
 language: python
 python:
-  - '3.6'
+  - '3.8'
 before_install:
   - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
   - bash miniconda.sh -b -p $HOME/miniconda
@@ -8,10 +8,10 @@ before_install:
   - hash -r
   - conda config --set always_yes yes --set changeps1 no
   - conda update -q conda
-  - conda install python=3.6.8
+  - conda install python=3.8.5
   - conda config --add channels conda-forge
   - conda config --add channels bioconda
-  - conda install -c olcbioinformatics geneseekr=0.4.1=py_5
+  - conda install -c olcbioinformatics geneseekr=0.4.2=py_3
   
 script:
   - pytest tests/test_imports.py
