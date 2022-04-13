@@ -45,14 +45,13 @@ click_options = [
 
 click_blast_options = [
     click.option('-e', '--evalue',
-                     default='1E-5',
-                     help='Minimum evalue to use for BLAST analyses. Default is 1E-5'),
+                 default='1E-5',
+                 help='Minimum evalue to use for BLAST analyses. Default is 1E-5'),
 ]
 
 click_kma_options = [
 
 ]
-
 
 click_nt_options = [
     click.option('-A', '--resfinder',
@@ -90,6 +89,7 @@ def add_options(options):
         for option in reversed(options):
             func = option(func)
         return func
+
     return _add_options
 
 
@@ -213,7 +213,6 @@ try:
                        program_list=program_list)
 except KeyError:
     pass
-
 
 if __name__ == '__main__':
     group()
